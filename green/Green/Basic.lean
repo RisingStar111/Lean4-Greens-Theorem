@@ -58,11 +58,10 @@ example (a b : Real) : ∫ _ in a..b, 2 = 2*(b - a)  := by
     · exact continuousOn_const
     done
 
-variable {E} [NormedAddCommGroup E]
-variable [NormedSpace ℝ E]
-variable {a b : ℝ} {f g : ℝ → E} {μ : MeasureTheory.Measure ℝ}
+variable [NormedSpace ℝ ℝ] -- can generalise second R to a normedaddcommgroup or something judging by the definitions
+variable {a b : ℝ} {f g : ℝ → ℝ} {μ : MeasureTheory.Measure ℝ}
 
-theorem FTC2 {f' : ℝ → E} (dd : f' = deriv f): ∫ x in a..b, f' x = f b - f a := by
+theorem FTC2 {f' : ℝ → ℝ} (dd : f' = deriv f): ∫ x in a..b, f' x = f b - f a := by
   sorry -- also don't think the statement is right
   done
 
@@ -80,4 +79,9 @@ theorem integral_neg_reverse2 : ∫ x in a..b, f x = - ∫ x in b..a, f x := by
 theorem integral_same : ∫ x in a..a, f x = 0 := by
   unfold intervalIntegral
   apply sub_self _
+  done
+
+theorem integral_const_mul {c : ℝ} : ∫ x in a..b, c * (f x) = c * (∫ x in a..b, f x) := by
+  -- the doc version pipes all the way back to the abstracted integral definition to do this -- maybe if possible it could be easier to make our own definition of integral and work off that with normal, sensible maths
+  sorry
   done

@@ -81,7 +81,8 @@ theorem integral_same : ∫ x in a..a, f x = 0 := by
   apply sub_self _
   done
 
-theorem integral_const_mul {c : ℝ} : ∫ x in a..b, c * (f x) = c * (∫ x in a..b, f x) := by
+theorem integral_const_mul {c : ℝ} : ∫ x in a..b, c * (f x) ∂μ = c * (∫ x in a..b, f x ∂μ) := by
+  simp only [intervalIntegral, MeasureTheory.integral_smul, smul_sub] -- this is docs method
   -- the doc version pipes all the way back to the abstracted integral definition to do this -- maybe if possible it could be easier to make our own definition of integral and work off that with normal, sensible maths
   sorry
   done

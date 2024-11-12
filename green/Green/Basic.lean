@@ -52,7 +52,32 @@ example (a b : Real) : ∫ _ in a..b, 2 = 2*(b - a)  := by
     apply intervalIntegral.integral_deriv_eq_sub'
     · apply deriv_eq
       intro x -- idk how refine works, everything above has gone to great effort to avoid it (and simp since it just solves them) cuz it just breaks
+      --refine HasDerivWithinAt.hasDerivAt ?hderiv.h.h ?hderiv.h.hs
       apply?
     · apply?
     · exact continuousOn_const
     done
+
+variable {E} [NormedAddCommGroup E]
+variable [NormedSpace ℝ E]
+variable {a b : ℝ} {f g : ℝ → E} {μ : MeasureTheory.Measure ℝ}
+
+theorem FTC2 {f' : ℝ → E} (dd : f' = deriv f): ∫ x in a..b, f' x = f b - f a := by
+  sorry -- also don't think the statement is right
+  done
+
+theorem integral_neg_reverse (F : f = deriv g): ∫ x in a..b, f x = - ∫ x in b..a, f x := by
+  rw [FTC2 F, FTC2 F]
+  norm_num
+  done
+
+theorem integral_neg_reverse2 : ∫ x in a..b, f x = - ∫ x in b..a, f x := by
+  unfold intervalIntegral
+  --rw [FTC2 F, FTC2 F]
+  norm_num
+  done
+
+theorem integral_same : ∫ x in a..a, f x = 0 := by
+  unfold intervalIntegral
+  apply sub_self _
+  done

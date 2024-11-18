@@ -61,6 +61,7 @@ example (a b : Real) : ∫ _ in a..b, 2 = 2*(b - a)  := by
 variable [NormedSpace ℝ ℝ] -- can generalise second R to a normedaddcommgroup or something judging by the definitions
 variable {a b : ℝ} {f g : ℝ → ℝ} {μ : MeasureTheory.Measure ℝ}
 
+
 theorem FTC2 {f' : ℝ → ℝ} (dd : f' = deriv f): ∫ x in a..b, f' x = f b - f a := by
   sorry -- also don't think the statement is right
   done
@@ -85,4 +86,28 @@ theorem integral_const_mul {c : ℝ} : ∫ x in a..b, c * (f x) ∂μ = c * (∫
   simp only [intervalIntegral, MeasureTheory.integral_smul, smul_sub] -- this is docs method
   -- the doc version pipes all the way back to the abstracted integral definition to do this -- maybe if possible it could be easier to make our own definition of integral and work off that with normal, sensible maths
   sorry
+  done
+
+class Region (α : Type) where
+  a : α
+  b : α
+  f_t : α → α
+  f_b : α → α -- can't subscript a b??
+
+structure Simple_region where
+  a : ℝ
+  b : ℝ
+  f_t : ℝ → ℝ
+  f_b : ℝ → ℝ -- can't make these a general thing even if i tell it the general thing is ℝ?
+  no_cross : ∀ x, f_t x >= f_b x
+
+theorem abba (c : ℝ): ∀ x, c = (fun (d : ℝ) ↦ c) x := by
+  exact fun x ↦ rfl
+  done
+
+#check Simple_region.no_cross (Simple_region.mk 3 4 1 2 sorry)
+example : (2 : ℝ) <= 1 := by
+  rw [abba 2, abba 1]
+  apply Simple_region.no_cross (Simple_region.mk 3 4 1 2 sorry)
+  repeat assumption
   done

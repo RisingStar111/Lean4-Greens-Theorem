@@ -117,7 +117,7 @@ variable {k : ℝ → ℝ×ℝ}
 
 noncomputable
 def pathIntegral (r : ℝ → ℝ×ℝ) (f : ℝ×ℝ → ℝ) (μ : MeasureTheory.Measure ℝ) : ℝ :=
-  ∫ x in a..b, (fun x ↦ (f (r x)) * norm (deriv r x)) x ∂μ
+  ∫ x in (0)..(1), (fun x ↦ (f (r x)) * norm (deriv r x)) x ∂μ
 
 notation3"∫ "(...)" in "a", "p:60:(scoped f => f)" ∂"μ:70 => pathIntegral a p μ
 

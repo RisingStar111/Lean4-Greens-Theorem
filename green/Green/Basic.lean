@@ -111,3 +111,14 @@ example : (2 : ℝ) <= 1 := by
   apply Simple_region.no_cross (Simple_region.mk 3 4 1 2 sorry)
   repeat assumption
   done
+
+variable {L : ℝ×ℝ → ℝ}
+variable {k : ℝ → ℝ×ℝ}
+
+noncomputable
+def pathIntegral (r : ℝ → ℝ×ℝ) (f : ℝ×ℝ → ℝ) (μ : MeasureTheory.Measure ℝ) : ℝ :=
+  ∫ x in a..b, (fun x ↦ (f (r x)) * norm (deriv r x)) x ∂μ
+
+notation3"∫ "(...)" in "a", "p:60:(scoped f => f)" ∂"μ:70 => pathIntegral a p μ
+
+#check ∫ x in k, (fun l ↦ l.1 + l.2) x ∂μ

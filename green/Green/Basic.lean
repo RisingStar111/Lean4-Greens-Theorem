@@ -116,9 +116,21 @@ variable {L : ℝ×ℝ → ℝ}
 variable {k : ℝ → ℝ×ℝ}
 
 noncomputable
-def pathIntegral (r : ℝ → ℝ×ℝ) (f : ℝ×ℝ → ℝ) (μ : MeasureTheory.Measure ℝ) : ℝ :=
+def pathIntegral (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : MeasureTheory.Measure ℝ) : ℝ :=
   ∫ x in (0)..(1), (fun x ↦ (f (r x)) * norm (deriv r x)) x ∂μ
 
-notation3"∫ "(...)" in "a", "p:60:(scoped f => f)" ∂"μ:70 => pathIntegral a p μ
+-- todo: update the notation syntax to lean 4, and also like get the second one to work idk
+notation3"∫ "(...)" in "a", "p:60:(scoped f => f)" ∂"μ:70 => pathIntegral p a μ
+notation3"∫ "(...)" in "a", "p:60:(scoped f => pathIntegral f a MeasureTheory.volume) => a
 
+#check ∫ x in k, (fun l ↦ l.1 + l.2) x
 #check ∫ x in k, (fun l ↦ l.1 + l.2) x ∂μ
+#check ∫ x in (0)..(1), (fun l ↦ l) x
+
+--variable [TopologicalSpace (ℝ×ℝ)]
+variable {p1 p2 : ℝ×ℝ}
+
+-- todo: coersion between version 1/2?
+noncomputable
+def pathIntegral2 (f : ℝ×ℝ → ℝ) (r : Path p1 p2) (μ : MeasureTheory.Measure ℝ) : ℝ :=
+  ∫ x in (0)..(1), (fun x ↦ (f (r.extend x)) * norm (deriv r.extend x)) x ∂μ

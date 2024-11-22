@@ -125,6 +125,7 @@ notation3"∫ "(...)" in "a", "p:60:(scoped f => pathIntegral f a MeasureTheory.
 
 #check ∫ x in k, (fun l ↦ l.1 + l.2) x
 #check ∫ x in k, (fun l ↦ l.1 + l.2) x ∂μ
+#check ∫ x in k, L x ∂μ
 #check ∫ x in (0)..(1), (fun l ↦ l) x
 
 --variable [TopologicalSpace (ℝ×ℝ)]
@@ -134,3 +135,27 @@ variable {p1 p2 : ℝ×ℝ}
 noncomputable
 def pathIntegral2 (f : ℝ×ℝ → ℝ) (r : Path p1 p2) (μ : MeasureTheory.Measure ℝ) : ℝ :=
   ∫ x in (0)..(1), (fun x ↦ (f (r.extend x)) * norm (deriv r.extend x)) x ∂μ
+
+noncomputable
+def pathIntegral3 (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : MeasureTheory.Measure ℝ) : ℝ :=
+  ∫ x in a..b, (fun x ↦ (f (r x)) * norm (deriv r x)) x ∂μ
+
+-- theorem pathIntegral_split_at (c : ℝ) : ∫ x in k, L x ∂μ = ∫ x in (fun l ↦ k (1/c * l)), L x ∂μ + ∫ x in (fun l ↦ k (1/(1-c) * l + c)), L x ∂μ := by
+--   unfold pathIntegral
+--   simp
+
+--   sorry
+--   done
+
+-- It works!
+variable [MeasureTheory.IsLocallyFiniteMeasure μ]
+theorem pathIntegral3_split_at (c : ℝ) {hl : Continuous L} {hk : Continuous k} {hdk : Continuous (deriv k)} : pathIntegral3 a c L k μ + pathIntegral3 c b L k μ = pathIntegral3 a b L k μ := by
+  unfold pathIntegral3
+  apply intervalIntegral.integral_add_adjacent_intervals
+  · refine Continuous.intervalIntegrable ?h a c
+    apply Continuous.mul
+    exact Continuous.comp' hl hk
+    apply Continuous.norm
+    exact hdk
+  · refine Continuous.intervalIntegrable ?h c b -- idk why this doesn't need the rest
+  done

@@ -149,6 +149,21 @@ def pathIntegral3 (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ 
 
 -- It works!
 variable [MeasureTheory.IsLocallyFiniteMeasure μ]
+
+-- generalising? ?
+def pathIntegral3Integrable (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : MeasureTheory.Measure ℝ) : Prop :=
+  IntervalIntegrable (fun x ↦ (f (r x)) * norm (deriv r x)) μ a b
+
+theorem continuous_pathIntegral3_intervalIntegrable {hl : Continuous L} {hk : Continuous k} {hdk : Continuous (deriv k)} : pathIntegral3Integrable a b L k μ := by
+  unfold pathIntegral3Integrable
+  refine Continuous.intervalIntegrable ?h a b
+  apply Continuous.mul
+  exact Continuous.comp' hl hk
+  apply Continuous.norm
+  exact hdk
+  done
+
+-- original
 theorem pathIntegral3_split_at (c : ℝ) {hl : Continuous L} {hk : Continuous k} {hdk : Continuous (deriv k)} : pathIntegral3 a c L k μ + pathIntegral3 c b L k μ = pathIntegral3 a b L k μ := by
   unfold pathIntegral3
   apply intervalIntegral.integral_add_adjacent_intervals
@@ -158,4 +173,12 @@ theorem pathIntegral3_split_at (c : ℝ) {hl : Continuous L} {hk : Continuous k}
     apply Continuous.norm
     exact hdk
   · refine Continuous.intervalIntegrable ?h c b -- idk why this doesn't need the rest
+  done
+
+-- more general? -- this is how the docs do it for normal intervalIntegrals afaict
+omit [MeasureTheory.IsLocallyFiniteMeasure μ] in -- compiler told me this is probably a good thing
+theorem pathIntegral3_split_at2 (c : ℝ) {hac : pathIntegral3Integrable a c L k μ} {hcb : pathIntegral3Integrable c b L k μ} : pathIntegral3 a c L k μ + pathIntegral3 c b L k μ = pathIntegral3 a b L k μ := by
+  unfold pathIntegral3
+  apply intervalIntegral.integral_add_adjacent_intervals
+  repeat assumption
   done

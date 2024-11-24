@@ -182,3 +182,68 @@ theorem pathIntegral3_split_at2 (c : ℝ) {hac : pathIntegral3Integrable a c L k
   apply intervalIntegral.integral_add_adjacent_intervals
   repeat assumption
   done
+
+-- can't work this out, (won't apply to a thing it literally says is the same) but even if i got that the next bit doesn't work because i can't take the substitution inside deriv
+theorem pathIntegral3_equal_translate_a_le_b : ∃j, pathIntegral3 a b L k μ = pathIntegral3 0 (b-a) L j μ := by
+  use fun w ↦ k (w+a)
+  have haa : a - a = 0 := by
+    simp
+  rw [<- haa]
+  unfold pathIntegral3
+  conv => rhs; pattern ‖_‖; rw [deriv_comp_add_const] -- ^ ^!!
+  have : ∫ (x : ℝ) in a..b, (fun x ↦ L (k x) * ‖deriv k x‖) x ∂μ = ∫ (x : ℝ) in a..b, (fun x ↦ L (k x) * ‖deriv k x‖) x := by
+    have vv : μ = MeasureTheory.volume := by
+      sorry
+    rw [vv]
+  have t: ∫ (x : ℝ) in a-a..b-a, (fun x ↦ L ((fun w ↦ k (w + a)) x) * ‖deriv k (x + a)‖) x ∂μ = ∫ (x : ℝ) in a-a..b-a, (fun x ↦ L ((fun w ↦ k (w + a)) x) * ‖deriv k (x + a)‖) x := by
+    have vv : μ = MeasureTheory.volume := by
+      sorry
+    rw [vv]
+  rw [this, t, <- intervalIntegral.integral_comp_sub_right _ a]
+  simp
+  -- conv =>
+  --   rhs
+  --   rw [<- rsub_self]
+  --   --rw [intervalIntegral.integral_comp_sub_right]
+  -- -- have hxa : ∀x, ∃y, y = x + a := by
+  -- --   simp only [exists_eq, implies_true]
+  -- simp
+  sorry
+  done
+
+-- example : ∫ (x : ℝ) in a..b, (fun x ↦ L (k x) * ‖deriv k x‖) x = ∫ (x : ℝ) in a - a..b - a, (fun x ↦ L ((fun w ↦ k (w + a)) x) * ‖deriv (fun w ↦ k (w + a)) x‖) x := by
+--   rw [<- intervalIntegral.integral_comp_sub_right _ a]
+--   simp only [sub_add_cancel]
+--   have :∀x, deriv (fun w ↦ k (w + a)) (x - a) = deriv (fun w ↦ k (w)) (x) := by
+--     intro x
+--     norm_num
+--     have hah : deriv (fun o ↦ k (o + a)) (x-a) = (fun o ↦ deriv (fun o ↦ k (o + a)) o) (x-a) := by
+--       simp
+--       done
+--     rw [hah]
+--     simp
+--     sorry
+--     done
+--   rw [<- this]
+--   sorry
+--   done
+
+theorem unit_pathIntegral3_equal_translate_a_le_b (hk :∀x, ‖deriv k x‖ = 1) : ∃j, pathIntegral3 a b L k μ = pathIntegral3 0 (b-a) L j μ := by
+  use fun w ↦ k (w+a)
+  have haa : a - a = 0 := by
+    simp
+  rw [<- haa]
+  unfold pathIntegral3
+  simp_rw [hk]
+  simp_rw [deriv_comp_add_const]
+  simp
+  conv => rhs; rw [<- intervalIntegral.integral_comp_sub_right (fun x ↦ ((fun x ↦ L ((fun w ↦ k (w + a)) x) * ‖deriv (fun w ↦ k (w + a)) x‖) x)) a]
+  -- conv =>
+  --   rhs
+  --   rw [<- rsub_self]
+  --   --rw [intervalIntegral.integral_comp_sub_right]
+  -- -- have hxa : ∀x, ∃y, y = x + a := by
+  -- --   simp only [exists_eq, implies_true]
+  -- simp
+  sorry
+  done

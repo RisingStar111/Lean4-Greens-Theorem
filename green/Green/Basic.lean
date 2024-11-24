@@ -195,3 +195,36 @@ theorem pathIntegral3_equal_translate {vv : μ = MeasureTheory.volume} : ∃j, p
   rw [vv, <- intervalIntegral.integral_comp_sub_right _ a]
   simp
   done
+
+-- halp
+omit [MeasureTheory.IsLocallyFiniteMeasure μ] in
+-- set_option diagnostics true in
+theorem pathIntegral3_equal_scale {vv : μ = MeasureTheory.volume} (c : ℝ) : ∃j, pathIntegral3 a b L k μ = pathIntegral3 (c*a) (c*b) L j μ := by
+  use fun w ↦ k (w/c)
+  unfold pathIntegral3
+  -- have : (fun w ↦ k (c * w)) = k ∘ (HMul.hMul c) := by
+  --   rfl
+  have tt : ∀x, deriv (fun w ↦ k (w / c)) x = deriv k (x / c) / (c, c) := by
+    sorry
+    done
+  conv => rhs; pattern ‖_‖; congr; rw [tt] -- ^ ^!!
+  rw [vv, <- intervalIntegral.smul_integral_comp_mul_left _ c]
+  simp
+  have : c ≠ 0 := by sorry
+  conv => rhs; pattern _ * _; rw [mul_comm c, mul_div_assoc, div_self]; rfl; exact this
+  simp
+  have : ∀x, ‖deriv k x / (c,c)‖ = ‖k x‖ / |c| := by
+    intro x
+    -- apply?
+    sorry
+    done
+  simp_rw [this]
+  simp_rw [div_eq_inv_mul]
+  conv => rhs; pattern _ * _; rw [<- mul_assoc]; rw [mul_comm (L _), mul_assoc]
+  conv => rhs; rw [<- intervalIntegral.integral_smul]
+  have : c > 0 := by
+    sorry
+  rw [abs_of_pos]
+  conv => rhs; pattern _ • _; rw [<- smul_mul_assoc]
+
+  done

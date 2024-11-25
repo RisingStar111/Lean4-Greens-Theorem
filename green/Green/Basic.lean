@@ -154,12 +154,21 @@ variable [MeasureTheory.IsLocallyFiniteMeasure μ]
 def pathIntegral3Integrable (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : MeasureTheory.Measure ℝ) : Prop :=
   IntervalIntegrable (fun x ↦ (f (r x)) * norm (deriv r x)) μ a b
 
+-- this is actually too strong a condition, just need norm(deriv) continuous - in particular this can't do corners atm
 theorem continuous_pathIntegral3_intervalIntegrable {hl : Continuous L} {hk : Continuous k} {hdk : Continuous (deriv k)} : pathIntegral3Integrable a b L k μ := by
   unfold pathIntegral3Integrable
   refine Continuous.intervalIntegrable ?h a b
   apply Continuous.mul
   exact Continuous.comp' hl hk
   apply Continuous.norm
+  exact hdk
+  done
+
+theorem norm_continuous_pathIntegral3_intervalIntegrable {hl : Continuous L} {hk : Continuous k} {hdk : Continuous (fun x ↦ ‖deriv k x‖)} : pathIntegral3Integrable a b L k μ := by
+  unfold pathIntegral3Integrable
+  refine Continuous.intervalIntegrable ?h a b
+  apply Continuous.mul
+  exact Continuous.comp' hl hk
   exact hdk
   done
 

@@ -140,6 +140,10 @@ noncomputable
 def pathIntegral3 (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : MeasureTheory.Measure ℝ) : ℝ :=
   ∫ x in a..b, (fun x ↦ (f (r x)) * norm (deriv r x)) x ∂μ
 
+noncomputable
+def pathIntegral3_proj_fst (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : MeasureTheory.Measure ℝ) : ℝ :=
+  ∫ x in a..b, (fun x ↦ (f (r x)) * norm ((deriv r x).fst)) x ∂μ
+
 -- theorem pathIntegral_split_at (c : ℝ) : ∫ x in k, L x ∂μ = ∫ x in (fun l ↦ k (1/c * l)), L x ∂μ + ∫ x in (fun l ↦ k (1/(1-c) * l + c)), L x ∂μ := by
 --   unfold pathIntegral
 --   simp
@@ -153,6 +157,9 @@ variable [MeasureTheory.IsLocallyFiniteMeasure μ]
 -- generalising? ?
 def pathIntegral3Integrable (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : MeasureTheory.Measure ℝ) : Prop :=
   IntervalIntegrable (fun x ↦ (f (r x)) * norm (deriv r x)) μ a b
+
+def pathIntegral3_proj_fst_Integrable (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : MeasureTheory.Measure ℝ) : Prop :=
+  IntervalIntegrable (fun x ↦ (f (r x)) * norm ((deriv r x).fst)) μ a b
 
 -- this is actually too strong a condition, just need norm(deriv) continuous - in particular this can't do corners atm
 theorem continuous_pathIntegral3_intervalIntegrable {hl : Continuous L} {hk : Continuous k} {hdk : Continuous (deriv k)} : pathIntegral3Integrable a b L k μ := by
@@ -192,6 +199,13 @@ theorem pathIntegral3_split_at2 (c : ℝ) {hac : pathIntegral3Integrable a c L k
   repeat assumption
   done
 
+omit [MeasureTheory.IsLocallyFiniteMeasure μ] in -- compiler told me this is probably a good thing
+theorem pathIntegral3_proj_fst_split_at2 (c : ℝ) {hac : pathIntegral3_proj_fst_Integrable a c L k μ} {hcb : pathIntegral3_proj_fst_Integrable c b L k μ} : pathIntegral3_proj_fst a c L k μ + pathIntegral3_proj_fst c b L k μ = pathIntegral3_proj_fst a b L k μ := by
+  unfold pathIntegral3_proj_fst
+  apply intervalIntegral.integral_add_adjacent_intervals
+  repeat assumption
+  done
+
 -- relies on lebesgue measure (μ = MeasureTheory.volume)
 omit [MeasureTheory.IsLocallyFiniteMeasure μ] in
 theorem pathIntegral3_equal_translate : ∃j, pathIntegral3 a b L k MeasureTheory.volume = pathIntegral3 0 (b-a) L j MeasureTheory.volume := by
@@ -220,8 +234,19 @@ theorem pathIntegral3_equal_translate_exact_arbitrary (c : ℝ): pathIntegral3 a
   done
 
 -- oh that's a sneaky thing innit -- the path integral is *not* over dk, but dx - need a way to project the path integral
-theorem green_split_alpha (s_1 s_2 s_3 : ℝ) (hs01 : pathIntegral3 0 s_1 L k MeasureTheory.volume = ∫ x in (0)..s_1, L (x,f x)) (hs12 : pathIntegral3 s_1 s_2 L k MeasureTheory.volume = ∫ x in s_1..s_2, L (x, 0)): pathIntegral3 0 1 L k MeasureTheory.volume = ∫ x in a..b, L (x,f x) - ∫ x in a..b, L (x,g x) := by
-
+-- easiest way out i think is to cast the deriv but that would need a new set of things
+-- other option is to cast the path parametrisation but idk how that works with deriv - actually doesn't work because that's sent to the function as well
+-- basically need to give the deriv some indication of what it's wrt ~~sneaky physicists~~
+-- the projected norm not being continuous at the corners causes issues as to split the parts have to be integrable, but atm can only split one at a time meaning the rest has to be integrable in whole
+theorem green_split_alpha (s_1 s_2 s_3 : ℝ) (hi0 : pathIntegral3_proj_fst_Integrable 0 s_1 L k MeasureTheory.volume) (hi1 : pathIntegral3_proj_fst_Integrable s_1 s_2 L k MeasureTheory.volume) (hi2 : pathIntegral3_proj_fst_Integrable s_2 s_3 L k MeasureTheory.volume) (hi3 : pathIntegral3_proj_fst_Integrable s_3 1 L k MeasureTheory.volume) (hs01 : pathIntegral3_proj_fst 0 s_1 L k MeasureTheory.volume = ∫ x in a..b, L (x,f x)) (hs12 : pathIntegral3_proj_fst s_1 s_2 L k MeasureTheory.volume = 0) (hs23 : pathIntegral3_proj_fst s_2 s_3 L k MeasureTheory.volume = ∫ x in b..a, L (x,g x)) (hs30 : pathIntegral3_proj_fst s_3 1 L k MeasureTheory.volume = 0): pathIntegral3_proj_fst 0 1 L k MeasureTheory.volume = (∫ x in a..b, L (x,f x)) - ∫ x in a..b, L (x,g x) := by
+  rw [<- pathIntegral3_proj_fst_split_at2 s_1]
+  nth_rw 2 [<- pathIntegral3_proj_fst_split_at2 s_2]
+  nth_rw 3 [<- pathIntegral3_proj_fst_split_at2 s_3]
+  all_goals first|assumption|skip
+  rw [hs01, hs12, hs23, hs30, intervalIntegral.integral_symm a b]
+  simp
+  rfl
+  sorry
   sorry
   done
 

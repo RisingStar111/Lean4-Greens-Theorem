@@ -183,35 +183,30 @@ theorem pathIntegral3_split_at2 (c : ℝ) {hac : pathIntegral3Integrable a c L k
   repeat assumption
   done
 
--- relies on lebesgue measure
+-- relies on lebesgue measure (μ = MeasureTheory.volume)
 omit [MeasureTheory.IsLocallyFiniteMeasure μ] in
-theorem pathIntegral3_equal_translate {vv : μ = MeasureTheory.volume} : ∃j, pathIntegral3 a b L k μ = pathIntegral3 0 (b-a) L j μ := by
+theorem pathIntegral3_equal_translate : ∃j, pathIntegral3 a b L k MeasureTheory.volume = pathIntegral3 0 (b-a) L j MeasureTheory.volume := by
   use fun w ↦ k (w+a)
   have haa : a - a = 0 := by
     simp
-  rw [<- haa]
   unfold pathIntegral3
-  conv => rhs; pattern ‖_‖; rw [deriv_comp_add_const] -- ^ ^!!
-  rw [vv, <- intervalIntegral.integral_comp_sub_right _ a]
+  simp_rw [<- haa, deriv_comp_add_const, <- intervalIntegral.integral_comp_sub_right _ a]
   simp
   done
 
 omit [MeasureTheory.IsLocallyFiniteMeasure μ] in
-theorem pathIntegral3_equal_translate_exact {vv : μ = MeasureTheory.volume} : pathIntegral3 a b L k μ = pathIntegral3 0 (b-a) L (fun x ↦ k (x+a)) μ := by
+theorem pathIntegral3_equal_translate_exact : pathIntegral3 a b L k MeasureTheory.volume = pathIntegral3 0 (b-a) L (fun x ↦ k (x+a)) MeasureTheory.volume := by
   have haa : a - a = 0 := by
     simp
-  rw [<- haa]
   unfold pathIntegral3
-  conv => rhs; pattern ‖_‖; rw [deriv_comp_add_const]
-  rw [vv, <- intervalIntegral.integral_comp_sub_right _ a]
+  simp_rw [<- haa, deriv_comp_add_const, <- intervalIntegral.integral_comp_sub_right _ a]
   simp
   done
 
 omit [MeasureTheory.IsLocallyFiniteMeasure μ] in
-theorem pathIntegral3_equal_translate_exact_arbitrary {vv : μ = MeasureTheory.volume} (c : ℝ): pathIntegral3 a b L k μ = pathIntegral3 (a + c) (b + c) L (fun x ↦ k (x-c)) μ := by
+theorem pathIntegral3_equal_translate_exact_arbitrary (c : ℝ): pathIntegral3 a b L k MeasureTheory.volume = pathIntegral3 (a + c) (b + c) L (fun x ↦ k (x-c)) MeasureTheory.volume := by
   unfold pathIntegral3
-  conv => rhs; pattern ‖_‖; rw [deriv_comp_sub_const]
-  rw [vv, <- intervalIntegral.integral_comp_add_right _ c]
+  simp_rw [deriv_comp_sub_const, <- intervalIntegral.integral_comp_add_right _ c]
   simp
   done
 

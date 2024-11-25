@@ -202,8 +202,16 @@ theorem pathIntegral3_equal_translate_exact {vv : μ = MeasureTheory.volume} : p
     simp
   rw [<- haa]
   unfold pathIntegral3
-  conv => rhs; pattern ‖_‖; rw [deriv_comp_add_const] -- ^ ^!!
+  conv => rhs; pattern ‖_‖; rw [deriv_comp_add_const]
   rw [vv, <- intervalIntegral.integral_comp_sub_right _ a]
+  simp
+  done
+
+omit [MeasureTheory.IsLocallyFiniteMeasure μ] in
+theorem pathIntegral3_equal_translate_exact_arbitrary {vv : μ = MeasureTheory.volume} (c : ℝ): pathIntegral3 a b L k μ = pathIntegral3 (a + c) (b + c) L (fun x ↦ k (x-c)) μ := by
+  unfold pathIntegral3
+  conv => rhs; pattern ‖_‖; rw [deriv_comp_sub_const]
+  rw [vv, <- intervalIntegral.integral_comp_add_right _ c]
   simp
   done
 

@@ -94,7 +94,7 @@ class Region (α : Type) where
   f_t : α → α
   f_b : α → α -- can't subscript a b??
 
-structure Simple_region where
+structure SimpleRegion where
   a : ℝ
   b : ℝ
   f_t : ℝ → ℝ
@@ -105,10 +105,10 @@ theorem abba (c : ℝ): ∀ x, c = (fun (d : ℝ) ↦ c) x := by
   exact fun x ↦ rfl
   done
 
-#check Simple_region.no_cross (Simple_region.mk 3 4 1 2 sorry)
+#check SimpleRegion.no_cross (SimpleRegion.mk 3 4 1 2 sorry)
 example : (2 : ℝ) <= 1 := by
   rw [abba 2, abba 1]
-  apply Simple_region.no_cross (Simple_region.mk 3 4 1 2 sorry)
+  apply SimpleRegion.no_cross (SimpleRegion.mk 3 4 1 2 sorry)
   repeat assumption
   done
 
@@ -217,6 +217,12 @@ theorem pathIntegral3_equal_translate_exact_arbitrary (c : ℝ): pathIntegral3 a
   unfold pathIntegral3
   simp_rw [deriv_comp_sub_const, <- intervalIntegral.integral_comp_add_right _ c]
   simp
+  done
+
+-- oh that's a sneaky thing innit -- the path integral is *not* over dk, but dx - need a way to project the path integral
+theorem green_split_alpha (s_1 s_2 s_3 : ℝ) (hs01 : pathIntegral3 0 s_1 L k MeasureTheory.volume = ∫ x in (0)..s_1, L (x,f x)) (hs12 : pathIntegral3 s_1 s_2 L k MeasureTheory.volume = ∫ x in s_1..s_2, L (x, 0)): pathIntegral3 0 1 L k MeasureTheory.volume = ∫ x in a..b, L (x,f x) - ∫ x in a..b, L (x,g x) := by
+
+  sorry
   done
 
 -- halp

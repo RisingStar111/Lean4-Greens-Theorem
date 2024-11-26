@@ -161,6 +161,12 @@ def pathIntegral3Integrable (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ�
 def pathIntegral3_proj_fst_Integrable (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : MeasureTheory.Measure ℝ) : Prop :=
   IntervalIntegrable (fun x ↦ (f (r x)) * norm ((deriv r x).fst)) μ a b
 
+omit [MeasureTheory.IsLocallyFiniteMeasure μ] in
+theorem pathIntegral3_proj_fst_Integrable_trans {c : ℝ} (hac : pathIntegral3_proj_fst_Integrable a c L k μ) (hcb : pathIntegral3_proj_fst_Integrable c b L k μ) : pathIntegral3_proj_fst_Integrable a b L k μ := by
+  unfold pathIntegral3_proj_fst_Integrable
+  apply IntervalIntegrable.trans hac hcb
+  done
+
 -- this is actually too strong a condition, just need norm(deriv) continuous - in particular this can't do corners atm
 theorem continuous_pathIntegral3_intervalIntegrable {hl : Continuous L} {hk : Continuous k} {hdk : Continuous (deriv k)} : pathIntegral3Integrable a b L k μ := by
   unfold pathIntegral3Integrable
@@ -239,6 +245,10 @@ theorem pathIntegral3_equal_translate_exact_arbitrary (c : ℝ): pathIntegral3 a
 -- basically need to give the deriv some indication of what it's wrt ~~sneaky physicists~~
 -- the projected norm not being continuous at the corners causes issues as to split the parts have to be integrable, but atm can only split one at a time meaning the rest has to be integrable in whole
 theorem green_split_alpha (s_1 s_2 s_3 : ℝ) (hi0 : pathIntegral3_proj_fst_Integrable 0 s_1 L k MeasureTheory.volume) (hi1 : pathIntegral3_proj_fst_Integrable s_1 s_2 L k MeasureTheory.volume) (hi2 : pathIntegral3_proj_fst_Integrable s_2 s_3 L k MeasureTheory.volume) (hi3 : pathIntegral3_proj_fst_Integrable s_3 1 L k MeasureTheory.volume) (hs01 : pathIntegral3_proj_fst 0 s_1 L k MeasureTheory.volume = ∫ x in a..b, L (x,f x)) (hs12 : pathIntegral3_proj_fst s_1 s_2 L k MeasureTheory.volume = 0) (hs23 : pathIntegral3_proj_fst s_2 s_3 L k MeasureTheory.volume = ∫ x in b..a, L (x,g x)) (hs30 : pathIntegral3_proj_fst s_3 1 L k MeasureTheory.volume = 0): pathIntegral3_proj_fst 0 1 L k MeasureTheory.volume = (∫ x in a..b, L (x,f x)) - ∫ x in a..b, L (x,g x) := by
+  have hi20 : pathIntegral3_proj_fst_Integrable s_2 1 L k MeasureTheory.volume := by
+    apply pathIntegral3_proj_fst_Integrable_trans hi2 hi3
+  have hi10 : pathIntegral3_proj_fst_Integrable s_1 1 L k MeasureTheory.volume := by
+    apply pathIntegral3_proj_fst_Integrable_trans hi1 hi20
   rw [<- pathIntegral3_proj_fst_split_at2 s_1]
   nth_rw 2 [<- pathIntegral3_proj_fst_split_at2 s_2]
   nth_rw 3 [<- pathIntegral3_proj_fst_split_at2 s_3]
@@ -246,8 +256,6 @@ theorem green_split_alpha (s_1 s_2 s_3 : ℝ) (hi0 : pathIntegral3_proj_fst_Inte
   rw [hs01, hs12, hs23, hs30, intervalIntegral.integral_symm a b]
   simp
   rfl
-  sorry
-  sorry
   done
 
 -- halp

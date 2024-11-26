@@ -4,6 +4,7 @@ import Mathlib.Tactic
 
 namespace Green
 
+
 example (p q : Prop) (hpq : p ∧ q) : q ∧ p := by
   -- exact id (And.symm hpq)
   ---- this lemma exists and `exact?` finds it for us
@@ -256,6 +257,38 @@ theorem green_split_alpha (s_1 s_2 s_3 : ℝ) (hi0 : pathIntegral3_proj_fst_Inte
   rw [hs01, hs12, hs23, hs30, intervalIntegral.integral_symm a b]
   simp
   rfl
+  done
+
+theorem rhs_sub (hlcd : ∀x, Continuous (deriv fun w ↦ L (x, w))) (hlc : Continuous L) (hfc : Continuous f) (hgc : Continuous g) (hdf : ∀x, Differentiable ℝ (fun w ↦ L (x,w))) : ∫ x in a..b, (∫ y in (g x)..(f x), (-(deriv (fun w ↦ L (x,w)))) y) = (∫ x in a..b, L (x,g x)) - ∫ x in a..b, L (x,f x) := by
+  simp
+  have ftc : ∀x, ∫ (x_1 : ℝ) in g x..f x, deriv (fun w ↦ L (x, w)) x_1 = L (x, f x) - L (x, g x) := by
+    intro x
+    rw [intervalIntegral.integral_deriv_eq_sub]
+    -- have t : ∀x_1 ∈ Set.uIcc (g x) (f x), DifferentiableAt ℝ (fun w ↦ L (x,w)) x_1 := by
+    --   sorry
+    -- exact t
+    intro x_1 h
+    have qq : ∀x_1, DifferentiableAt ℝ (fun w ↦ L (x,w)) x_1 := by
+      apply hdf
+    convert qq x_1
+    -- function that makes a normed space doesn't = any normed space ja makes sense
+    -- can't find any way to fix this - could try and bake it into assumption but that's just pushing it back
+    -- also had(have) mega issues with just turning the 'in subset of R' to 'in R'
+    sorry
+    apply Continuous.intervalIntegrable
+    apply hlcd
+  simp_rw [ftc]
+  rw [intervalIntegral.integral_sub]
+  simp
+  all_goals {
+    apply Continuous.intervalIntegrable
+    apply Continuous.comp
+    assumption
+    simp
+    apply And.intro
+    exact continuous_id
+    assumption
+  }
   done
 
 -- halp

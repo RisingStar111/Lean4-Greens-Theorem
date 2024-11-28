@@ -15,112 +15,38 @@ end Region
 
 namespace PathIntegral
 
+open MeasureTheory
+
 variable [NormedSpace ℝ ℝ] -- can generalise second R to a normedaddcommgroup or something judging by the definitions
-variable {a b : ℝ} {f g : ℝ → ℝ} {μ : MeasureTheory.Measure ℝ}
+variable {a b : ℝ} {f g : ℝ → ℝ} {μ : Measure ℝ}
 variable {L : ℝ×ℝ → ℝ}
 variable {k : ℝ → ℝ×ℝ}
 variable {p1 p2 : ℝ×ℝ}
 
 -- todo: update the notation syntax to lean 4, and also like get the second one to work idk
 -- notation3"∫ "(...)" in "a", "p:60:(scoped f => f)" ∂"μ:70 => pathIntegral p a μ
--- notation3"∫ "(...)" in "a", "p:60:(scoped f => pathIntegral f a MeasureTheory.volume) => a
-
--- todo: coersion between version 1/2/3?
-noncomputable
-def pathIntegral2 (f : ℝ×ℝ → ℝ) (r : Path p1 p2) (μ : MeasureTheory.Measure ℝ) : ℝ :=
-  ∫ x in (0)..(1), (fun x ↦ (f (r.extend x)) * norm (deriv r.extend x)) x ∂μ
+-- notation3"∫ "(...)" in "a", "p:60:(scoped f => pathIntegral f a volume) => a
 
 noncomputable
-def pathIntegral3 (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : MeasureTheory.Measure ℝ) : ℝ :=
-  ∫ x in a..b, (fun x ↦ (f (r x)) * norm (deriv r x)) x ∂μ
-
-noncomputable
-def pathIntegral3_proj_fst (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : MeasureTheory.Measure ℝ) : ℝ :=
+def pathIntegral_proj_fst (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : Measure ℝ := volume) : ℝ :=
   ∫ x in a..b, (fun x ↦ (f (r x)) * norm ((deriv r x).fst)) x ∂μ
 
--- It works!
-variable [MeasureTheory.IsLocallyFiniteMeasure μ]
+variable [IsLocallyFiniteMeasure μ] -- not sure why this behaves differently to putting it in the assumptions wrt the thms after it's ommitted
 
--- generalising? ?
-def pathIntegral3Integrable (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : MeasureTheory.Measure ℝ) : Prop :=
-  IntervalIntegrable (fun x ↦ (f (r x)) * norm (deriv r x)) μ a b
-
-def pathIntegral3_proj_fst_Integrable (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : MeasureTheory.Measure ℝ) : Prop :=
+def pathIntegral3_proj_fst_Integrable (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : Measure ℝ := volume) : Prop :=
   IntervalIntegrable (fun x ↦ (f (r x)) * norm ((deriv r x).fst)) μ a b
 
-theorem norm_continuous_pathIntegral3_intervalIntegrable {hl : Continuous L} {hk : Continuous k} {hdk : Continuous (fun x ↦ ‖deriv k x‖)} : pathIntegral3Integrable a b L k μ := by
-  unfold pathIntegral3Integrable
-  refine Continuous.intervalIntegrable ?h a b
-  apply Continuous.mul
-  exact Continuous.comp' hl hk
-  exact hdk
-  done
+omit [IsLocallyFiniteMeasure μ]
 
-omit [MeasureTheory.IsLocallyFiniteMeasure μ]
-
-theorem pathIntegral3_proj_fst_Integrable_trans {c : ℝ} (hac : pathIntegral3_proj_fst_Integrable a c L k μ) (hcb : pathIntegral3_proj_fst_Integrable c b L k μ) : pathIntegral3_proj_fst_Integrable a b L k μ := by
+theorem pathIntegral_proj_fst_Integrable_trans {c : ℝ} (hac : pathIntegral3_proj_fst_Integrable a c L k μ) (hcb : pathIntegral3_proj_fst_Integrable c b L k μ) : pathIntegral3_proj_fst_Integrable a b L k μ := by
   unfold pathIntegral3_proj_fst_Integrable
   apply IntervalIntegrable.trans hac hcb
   done
 
--- more general? -- this is how the docs do it for normal intervalIntegrals afaict
-theorem pathIntegral3_split_at2 (c : ℝ) {hac : pathIntegral3Integrable a c L k μ} {hcb : pathIntegral3Integrable c b L k μ} : pathIntegral3 a c L k μ + pathIntegral3 c b L k μ = pathIntegral3 a b L k μ := by
-  unfold pathIntegral3
+theorem pathIntegral_proj_fst_split_at (c : ℝ) {hac : pathIntegral3_proj_fst_Integrable a c L k μ} {hcb : pathIntegral3_proj_fst_Integrable c b L k μ} : pathIntegral_proj_fst a c L k μ + pathIntegral_proj_fst c b L k μ = pathIntegral_proj_fst a b L k μ := by
+  unfold pathIntegral_proj_fst
   apply intervalIntegral.integral_add_adjacent_intervals
   repeat assumption
-  done
-
-theorem pathIntegral3_proj_fst_split_at2 (c : ℝ) {hac : pathIntegral3_proj_fst_Integrable a c L k μ} {hcb : pathIntegral3_proj_fst_Integrable c b L k μ} : pathIntegral3_proj_fst a c L k μ + pathIntegral3_proj_fst c b L k μ = pathIntegral3_proj_fst a b L k μ := by
-  unfold pathIntegral3_proj_fst
-  apply intervalIntegral.integral_add_adjacent_intervals
-  repeat assumption
-  done
-
--- relies on lebesgue measure (μ = MeasureTheory.volume)
-theorem pathIntegral3_equal_translate : pathIntegral3 a b L k MeasureTheory.volume = pathIntegral3 0 (b-a) L (fun x ↦ k (x+a)) MeasureTheory.volume := by
-  have haa : a - a = 0 := by
-    simp
-  unfold pathIntegral3
-  simp_rw [<- haa, deriv_comp_add_const, <- intervalIntegral.integral_comp_sub_right _ a]
-  simp
-  done
-
-theorem pathIntegral3_equal_translate_arbitrary (c : ℝ): pathIntegral3 a b L k MeasureTheory.volume = pathIntegral3 (a + c) (b + c) L (fun x ↦ k (x-c)) MeasureTheory.volume := by
-  unfold pathIntegral3
-  simp_rw [deriv_comp_sub_const, <- intervalIntegral.integral_comp_add_right _ c]
-  simp
-  done
-
--- halp
--- set_option diagnostics true in
-theorem pathIntegral3_equal_scale {vv : μ = MeasureTheory.volume} (c : ℝ) : ∃j, pathIntegral3 a b L k μ = pathIntegral3 (c*a) (c*b) L j μ := by
-  use fun w ↦ k (w/c)
-  unfold pathIntegral3
-  -- have : (fun w ↦ k (c * w)) = k ∘ (HMul.hMul c) := by
-  --   rfl
-  have tt : ∀x, deriv (fun w ↦ k (w / c)) x = deriv k (x / c) / (c, c) := by
-    sorry
-    done
-  conv => rhs; pattern ‖_‖; congr; rw [tt] -- ^ ^!!
-  rw [vv, <- intervalIntegral.smul_integral_comp_mul_left _ c]
-  simp
-  have : c ≠ 0 := by sorry
-  conv => rhs; pattern _ * _; rw [mul_comm c, mul_div_assoc, div_self]; rfl; exact this
-  simp
-  have : ∀x, ‖deriv k x / (c,c)‖ = ‖k x‖ / |c| := by
-    intro x
-    -- apply?
-    sorry
-    done
-  simp_rw [this]
-  simp_rw [div_eq_inv_mul]
-  conv => rhs; pattern _ * _; rw [<- mul_assoc]; rw [mul_comm (L _), mul_assoc]
-  conv => rhs; rw [<- intervalIntegral.integral_smul]
-  have : c > 0 := by
-    sorry
-  rw [abs_of_pos]
-  conv => rhs; pattern _ • _; rw [<- smul_mul_assoc]
-
   done
 
 end PathIntegral
@@ -140,14 +66,14 @@ variable {k : ℝ → ℝ×ℝ}
 -- other option is to cast the path parametrisation but idk how that works with deriv - actually doesn't work because that's sent to the function as well
 -- basically need to give the deriv some indication of what it's wrt ~~sneaky physicists~~
 -- the projected norm not being continuous at the corners causes issues as to split the parts have to be integrable, but atm can only split one at a time meaning the rest has to be integrable in whole
-theorem green_split_alpha (s_1 s_2 s_3 : ℝ) (hi0 : pathIntegral3_proj_fst_Integrable 0 s_1 L k MeasureTheory.volume) (hi1 : pathIntegral3_proj_fst_Integrable s_1 s_2 L k MeasureTheory.volume) (hi2 : pathIntegral3_proj_fst_Integrable s_2 s_3 L k MeasureTheory.volume) (hi3 : pathIntegral3_proj_fst_Integrable s_3 1 L k MeasureTheory.volume) (hs01 : pathIntegral3_proj_fst 0 s_1 L k MeasureTheory.volume = ∫ x in a..b, L (x,f x)) (hs12 : pathIntegral3_proj_fst s_1 s_2 L k MeasureTheory.volume = 0) (hs23 : pathIntegral3_proj_fst s_2 s_3 L k MeasureTheory.volume = ∫ x in b..a, L (x,g x)) (hs30 : pathIntegral3_proj_fst s_3 1 L k MeasureTheory.volume = 0): pathIntegral3_proj_fst 0 1 L k MeasureTheory.volume = (∫ x in a..b, L (x,f x)) - ∫ x in a..b, L (x,g x) := by
-  have hi20 : pathIntegral3_proj_fst_Integrable s_2 1 L k MeasureTheory.volume := by
-    apply pathIntegral3_proj_fst_Integrable_trans hi2 hi3
-  have hi10 : pathIntegral3_proj_fst_Integrable s_1 1 L k MeasureTheory.volume := by
-    apply pathIntegral3_proj_fst_Integrable_trans hi1 hi20
-  rw [<- pathIntegral3_proj_fst_split_at2 s_1]
-  nth_rw 2 [<- pathIntegral3_proj_fst_split_at2 s_2]
-  nth_rw 3 [<- pathIntegral3_proj_fst_split_at2 s_3]
+theorem green_split_alpha (s_1 s_2 s_3 : ℝ) (hi0 : pathIntegral3_proj_fst_Integrable 0 s_1 L k) (hi1 : pathIntegral3_proj_fst_Integrable s_1 s_2 L k) (hi2 : pathIntegral3_proj_fst_Integrable s_2 s_3 L k) (hi3 : pathIntegral3_proj_fst_Integrable s_3 1 L k) (hs01 : pathIntegral_proj_fst 0 s_1 L k = ∫ x in a..b, L (x,f x)) (hs12 : pathIntegral_proj_fst s_1 s_2 L k = 0) (hs23 : pathIntegral_proj_fst s_2 s_3 L k = ∫ x in b..a, L (x,g x)) (hs30 : pathIntegral_proj_fst s_3 1 L k = 0): pathIntegral_proj_fst 0 1 L k = (∫ x in a..b, L (x,f x)) - ∫ x in a..b, L (x,g x) := by
+  have hi20 : pathIntegral3_proj_fst_Integrable s_2 1 L k := by
+    apply pathIntegral_proj_fst_Integrable_trans hi2 hi3
+  have hi10 : pathIntegral3_proj_fst_Integrable s_1 1 L k := by
+    apply pathIntegral_proj_fst_Integrable_trans hi1 hi20
+  rw [<- pathIntegral_proj_fst_split_at s_1]
+  nth_rw 2 [<- pathIntegral_proj_fst_split_at s_2]
+  nth_rw 3 [<- pathIntegral_proj_fst_split_at s_3]
   all_goals first|assumption|skip
   rw [hs01, hs12, hs23, hs30, intervalIntegral.integral_symm a b]
   simp

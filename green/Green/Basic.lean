@@ -21,13 +21,9 @@ variable {L : ℝ×ℝ → ℝ}
 variable {k : ℝ → ℝ×ℝ}
 variable {p1 p2 : ℝ×ℝ}
 
-noncomputable
-def pathIntegral (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : MeasureTheory.Measure ℝ) : ℝ :=
-  ∫ x in (0)..(1), (fun x ↦ (f (r x)) * norm (deriv r x)) x ∂μ
-
 -- todo: update the notation syntax to lean 4, and also like get the second one to work idk
-notation3"∫ "(...)" in "a", "p:60:(scoped f => f)" ∂"μ:70 => pathIntegral p a μ
-notation3"∫ "(...)" in "a", "p:60:(scoped f => pathIntegral f a MeasureTheory.volume) => a
+-- notation3"∫ "(...)" in "a", "p:60:(scoped f => f)" ∂"μ:70 => pathIntegral p a μ
+-- notation3"∫ "(...)" in "a", "p:60:(scoped f => pathIntegral f a MeasureTheory.volume) => a
 
 -- todo: coersion between version 1/2/3?
 noncomputable
@@ -52,35 +48,12 @@ def pathIntegral3Integrable (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ�
 def pathIntegral3_proj_fst_Integrable (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : MeasureTheory.Measure ℝ) : Prop :=
   IntervalIntegrable (fun x ↦ (f (r x)) * norm ((deriv r x).fst)) μ a b
 
-
--- this is actually too strong a condition, just need norm(deriv) continuous - in particular this can't do corners atm
-theorem continuous_pathIntegral3_intervalIntegrable {hl : Continuous L} {hk : Continuous k} {hdk : Continuous (deriv k)} : pathIntegral3Integrable a b L k μ := by
-  unfold pathIntegral3Integrable
-  refine Continuous.intervalIntegrable ?h a b
-  apply Continuous.mul
-  exact Continuous.comp' hl hk
-  apply Continuous.norm
-  exact hdk
-  done
-
 theorem norm_continuous_pathIntegral3_intervalIntegrable {hl : Continuous L} {hk : Continuous k} {hdk : Continuous (fun x ↦ ‖deriv k x‖)} : pathIntegral3Integrable a b L k μ := by
   unfold pathIntegral3Integrable
   refine Continuous.intervalIntegrable ?h a b
   apply Continuous.mul
   exact Continuous.comp' hl hk
   exact hdk
-  done
-
--- original
-theorem pathIntegral3_split_at (c : ℝ) {hl : Continuous L} {hk : Continuous k} {hdk : Continuous (deriv k)} : pathIntegral3 a c L k μ + pathIntegral3 c b L k μ = pathIntegral3 a b L k μ := by
-  unfold pathIntegral3
-  apply intervalIntegral.integral_add_adjacent_intervals
-  · refine Continuous.intervalIntegrable ?h a c
-    apply Continuous.mul
-    exact Continuous.comp' hl hk
-    apply Continuous.norm
-    exact hdk
-  · refine Continuous.intervalIntegrable ?h c b -- idk why this doesn't need the rest
   done
 
 omit [MeasureTheory.IsLocallyFiniteMeasure μ]
@@ -104,7 +77,7 @@ theorem pathIntegral3_proj_fst_split_at2 (c : ℝ) {hac : pathIntegral3_proj_fst
   done
 
 -- relies on lebesgue measure (μ = MeasureTheory.volume)
-theorem pathIntegral3_equal_translate_exact : pathIntegral3 a b L k MeasureTheory.volume = pathIntegral3 0 (b-a) L (fun x ↦ k (x+a)) MeasureTheory.volume := by
+theorem pathIntegral3_equal_translate : pathIntegral3 a b L k MeasureTheory.volume = pathIntegral3 0 (b-a) L (fun x ↦ k (x+a)) MeasureTheory.volume := by
   have haa : a - a = 0 := by
     simp
   unfold pathIntegral3
@@ -112,7 +85,7 @@ theorem pathIntegral3_equal_translate_exact : pathIntegral3 a b L k MeasureTheor
   simp
   done
 
-theorem pathIntegral3_equal_translate_exact_arbitrary (c : ℝ): pathIntegral3 a b L k MeasureTheory.volume = pathIntegral3 (a + c) (b + c) L (fun x ↦ k (x-c)) MeasureTheory.volume := by
+theorem pathIntegral3_equal_translate_arbitrary (c : ℝ): pathIntegral3 a b L k MeasureTheory.volume = pathIntegral3 (a + c) (b + c) L (fun x ↦ k (x-c)) MeasureTheory.volume := by
   unfold pathIntegral3
   simp_rw [deriv_comp_sub_const, <- intervalIntegral.integral_comp_add_right _ c]
   simp

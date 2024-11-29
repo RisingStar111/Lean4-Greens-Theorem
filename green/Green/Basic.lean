@@ -48,8 +48,6 @@ structure Region (a b : ℝ) (f g : ℝ → ℝ) where
 
 namespace Region
 
-open PathIntegral
-
 structure SimpleRegion (a b : ℝ) (f g : ℝ → ℝ) extends Region a b f g where
   no_cross : ∀ x, f_b x <= f_t x
   a_lt_b : a < b

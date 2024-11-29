@@ -54,6 +54,7 @@ theorem pathIntegral3_equal_translate_arbitrary (c : ℝ): pathIntegral3 a b L k
   done
 
 -- halp
+-- apply transform to coord, then throw it in function is different to throw in transformed function cuz of taking deriv? - yes. real maths we need to transform the function here - the deriv is *at the point* not *of the function applied to x*
 -- set_option diagnostics true in
 theorem pathIntegral3_equal_scale {vv : μ = MeasureTheory.volume} (c : ℝ) : ∃j, pathIntegral3 a b L k μ = pathIntegral3 (c*a) (c*b) L j μ := by
   use fun w ↦ k (w/c)

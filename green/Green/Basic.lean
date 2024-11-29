@@ -2,17 +2,6 @@ import Mathlib.Tactic
 
 #allow_unused_tactic Lean.Parser.Tactic.done
 
-namespace Region
-
-structure SimpleRegion where
-  a : ℝ
-  b : ℝ
-  f_t : ℝ → ℝ
-  f_b : ℝ → ℝ -- can't make these a general thing even if i tell it the general thing is ℝ?
-  no_cross : ∀ x, f_t x >= f_b x
-
-end Region
-
 namespace PathIntegral
 
 open MeasureTheory
@@ -50,6 +39,39 @@ theorem pathIntegral_proj_fst_split_at (c : ℝ) {hac : pathIntegral3_proj_fst_I
   done
 
 end PathIntegral
+
+structure Region (a b : ℝ) (f g : ℝ → ℝ) where
+  a : ℝ
+  b : ℝ
+  f_t : ℝ → ℝ
+  f_b : ℝ → ℝ -- can't make these a general thing even if i tell it the general thing is ℝ?
+
+namespace Region
+
+open PathIntegral
+
+variable {a b : ℝ} {f g : ℝ → ℝ}
+
+structure SimpleRegion (a b : ℝ) (f g : ℝ → ℝ) extends Region a b f g where
+  no_cross : ∀ x, f_b x <= f_t x
+  positive_oriented : a <= b
+
+variable (R : SimpleRegion a b f g)
+
+noncomputable
+def simple_boundary_function : ℝ → ℝ×ℝ :=
+  fun r ↦ (
+    if r < b then
+      (r, R.f_b r)
+    else if r < b+1 then
+      (b, (R.f_b b) + (r - b) * (R.f_t b - R.f_b b))
+    else if r < b+b+1-a then
+      (b+b+1 - r, R.f_t (b+b+1 - r))
+    else
+      (a, (R.f_t a) - (r-(b+b+1-a)))
+  )
+
+end Region
 
 namespace Green
 

@@ -68,7 +68,7 @@ theorem simple_boundary_continuous {hct : Continuous R.f_t} {hcb : Continuous R.
   unfold simple_boundary_function
   apply Continuous.piecewise
   simp
-  apply Continuous.prod_mk continuous_id hcb
+  continuity
 
   apply Continuous.piecewise
   simp_rw [Set.piecewise.eq_1]

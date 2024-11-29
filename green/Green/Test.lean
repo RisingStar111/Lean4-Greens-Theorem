@@ -1,11 +1,12 @@
 import Mathlib.Tactic
+
 open Classical
 
 #allow_unused_tactic Lean.Parser.Tactic.done
 namespace Test
 
 variable {E F A : Type*} [NormedAddCommGroup E]
-variable {f : ℝ → ℝ}
+variable {f : Option ℝ → ℝ}
 --variable {f : ℝ → E} {a b : ℝ}
 
 structure Partition (a b : ℝ) : Type where
@@ -16,7 +17,7 @@ structure Partition (a b : ℝ) : Type where
   (ordered : ∀ i j, i < j → points.get? i < points.get? j)
 
 structure PartitionFamily (a b : ℝ) : Type where
-(partitions : ℕ → Partition a b) 
+(partitions : ℕ → Partition a b)  -- A sequence of partitions
 (subintervals_tend_to_zero :
   ∀ ε > 0, ∃ N, ∀ n ≥ N, ∀ (partition := partitions n),
     ∀ i j, j = i + 1 →
@@ -28,8 +29,16 @@ structure PartitionFamily (a b : ℝ) : Type where
 def seq_limit (u : ℕ → ℝ) (l : ℝ) :=
 ∀ ε > 0, ∃ N, ∀ n ≥ N, |u n - l| ≤ ε
 
-def continuous_at (f : ℝ → ℝ) (x₀ : ℝ) : Prop :=
+def continuous_at (f : Option ℝ → ℝ) (x₀ : ℝ) : Prop :=
 ∀ ε > 0, ∃ δ > 0, ∀ x, |x - x₀| < δ → |f x - f x₀| < ε
+
+
+noncomputable def max (S : Set ℕ) : ℕ :=
+  if h : ∃ m ∈ S, ∀ s ∈ S, s ≤ m then
+    Classical.choose h else default
+
+noncomputable def natFloor (n : ℝ) : ℕ :=
+max {m | m ≤ n}
 
 
 def is_lim (f : ℝ → ℝ) (x₀ h : ℝ) : Prop :=
@@ -51,7 +60,12 @@ def differentiable (f : ℝ → ℝ) : Prop :=
 noncomputable def deriv (f : ℝ → ℝ) (x : ℝ) : Option ℝ :=
 lim (fun h : ℝ => (f (x + h) - f x) / h) 0
 
+def area (f : Option ℝ → ℝ) (a b : ℝ) (part : Partition a b) : ℝ :=
+∑ᶠ k ≤ (part.points.length-1), k = (f (part.points.get? ((part.points.length-1)-1)) * |part.points.get? (part.points.length-1) - part.points.get? ((part.points.length-1)-1)|)
+--does it go from k=0 or k=1
 
-def interval_integral (f : ℝ → ℝ) (a b : ℝ) : ℝ :=
-if h : ∀ PartitionFamily a b
---lim (Σ_{i=0}^{k-1} (f(x_i)*(x_{i+1}-x_i)) inf)
+noncomputable def interval_integral (f : Option ℝ → ℝ) (a b : ℝ) : Option ℝ :=
+if ∀ x ∈ Set.Icc a b, continuous_at f x then
+  ∃ P : PartitionFamily a b, lim (fun n : ℝ => area f a b (P.partitions (natFloor n))) Inf.inf
+else
+  none

@@ -50,26 +50,37 @@ namespace Region
 
 open PathIntegral
 
-variable {a b : ℝ} {f g : ℝ → ℝ}
-
 structure SimpleRegion (a b : ℝ) (f g : ℝ → ℝ) extends Region a b f g where
   no_cross : ∀ x, f_b x <= f_t x
-  positive_oriented : a <= b
+  a_lt_b : a < b
 
+variable {a b : ℝ} {f g : ℝ → ℝ}
 variable (R : SimpleRegion a b f g)
 
 noncomputable
 def simple_boundary_function : ℝ → ℝ×ℝ :=
-  fun r ↦ (
-    if r < b then
-      (r, R.f_b r)
-    else if r < b+1 then
-      (b, (R.f_b b) + (r - b) * (R.f_t b - R.f_b b))
-    else if r < b+b+1-a then
-      (b+b+1 - r, R.f_t (b+b+1 - r))
-    else
-      (a, (R.f_t a) - (r-(b+b+1-a)))
-  )
+  Set.piecewise (Set.Iio R.b) (fun r ↦ (r, R.f_b r))
+    (Set.piecewise (Set.Iio (R.b+1)) (fun r ↦ (R.b, (R.f_b R.b) + (r - R.b) * (R.f_t R.b - R.f_b R.b)))
+      (Set.piecewise (Set.Iio (R.b+1+R.b-R.a)) (fun r ↦ (R.b+1+R.b - r, R.f_t (R.b+1+R.b - r)))
+        (fun r ↦ (R.a, (R.f_t R.a) - (r-(R.b+1+R.b-R.a)) * (R.f_t R.a - R.f_b R.a)))))
+
+theorem simple_boundary_continuous {hct : Continuous R.f_t} {hcb : Continuous R.f_b} : Continuous (simple_boundary_function R) := by
+  unfold simple_boundary_function
+  apply Continuous.piecewise
+  simp
+  apply Continuous.prod_mk continuous_id hcb
+
+  apply Continuous.piecewise
+  simp_rw [Set.piecewise.eq_1]
+  simp
+  simp_rw [add_sub_assoc, lt_add_iff_pos_right, sub_pos, R.a_lt_b]
+  simp
+  continuity -- yes i did this manually before gpt told me about this
+
+  apply Continuous.piecewise
+  simp -- originally was trying to do this manually before finding out that i'd changed the def badly, credit to lean for finding that out
+  all_goals continuity -- since this is aesop it could also do the simps above it, but have left them separate to keep purpose clearer
+  done
 
 end Region
 

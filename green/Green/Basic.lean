@@ -55,6 +55,7 @@ structure SimpleRegion (a b : ℝ) (f g : ℝ → ℝ) extends Region a b f g wh
 variable {a b : ℝ} {f g : ℝ → ℝ}
 variable (R : SimpleRegion a b f g)
 
+-- todo: version for arclength (|deriv| = 1) version and proof that |deriv| = 1, for use in integrability (or otherwise work out easier integrability)
 noncomputable
 def simple_boundary_function : ℝ → ℝ×ℝ :=
   Set.piecewise (Set.Iio R.b) (fun r ↦ (r, R.f_b r))
@@ -71,8 +72,8 @@ theorem simple_boundary_continuous {hct : Continuous R.f_t} {hcb : Continuous R.
   apply Continuous.piecewise
   simp_rw [Set.piecewise.eq_1]
   simp
-  simp_rw [add_sub_assoc, lt_add_iff_pos_right, sub_pos, R.a_lt_b]
-  simp
+  simp_rw [add_sub_assoc, lt_add_iff_pos_right, sub_pos, R.a_lt_b, reduceIte]
+
   continuity -- yes i did this manually before gpt told me about this
 
   apply Continuous.piecewise

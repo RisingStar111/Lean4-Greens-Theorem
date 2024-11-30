@@ -10,7 +10,7 @@ variable [NormedSpace ℝ ℝ] -- can generalise second R to a normedaddcommgrou
 variable {a b : ℝ} {f g : ℝ → ℝ} {μ : Measure ℝ}
 variable {L : ℝ×ℝ → ℝ}
 variable {k : ℝ → ℝ×ℝ}
-variable {p1 p2 : ℝ×ℝ}
+-- variable {p1 p2 : ℝ×ℝ}
 
 -- todo: update the notation syntax to lean 4, and also like get the second one to work idk
 -- notation3"∫ "(...)" in "a", "p:60:(scoped f => f)" ∂"μ:70 => pathIntegral p a μ
@@ -22,17 +22,17 @@ def pathIntegral_proj_fst (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×�
 
 variable [IsLocallyFiniteMeasure μ] -- not sure why this behaves differently to putting it in the assumptions wrt the thms after it's ommitted
 
-def pathIntegral3_proj_fst_Integrable (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : Measure ℝ := volume) : Prop :=
+def pathIntegral_proj_fst_Integrable (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : Measure ℝ := volume) : Prop :=
   IntervalIntegrable (fun x ↦ (f (r x)) * norm ((deriv r x).fst)) μ a b
 
 omit [IsLocallyFiniteMeasure μ]
 
-theorem pathIntegral_proj_fst_Integrable_trans {c : ℝ} (hac : pathIntegral3_proj_fst_Integrable a c L k μ) (hcb : pathIntegral3_proj_fst_Integrable c b L k μ) : pathIntegral3_proj_fst_Integrable a b L k μ := by
-  unfold pathIntegral3_proj_fst_Integrable
+theorem pathIntegral_proj_fst_Integrable_trans {c : ℝ} (hac : pathIntegral_proj_fst_Integrable a c L k μ) (hcb : pathIntegral_proj_fst_Integrable c b L k μ) : pathIntegral_proj_fst_Integrable a b L k μ := by
+  unfold pathIntegral_proj_fst_Integrable
   apply IntervalIntegrable.trans hac hcb
   done
 
-theorem pathIntegral_proj_fst_split_at (c : ℝ) {hac : pathIntegral3_proj_fst_Integrable a c L k μ} {hcb : pathIntegral3_proj_fst_Integrable c b L k μ} : pathIntegral_proj_fst a c L k μ + pathIntegral_proj_fst c b L k μ = pathIntegral_proj_fst a b L k μ := by
+theorem pathIntegral_proj_fst_split_at (c : ℝ) {hac : pathIntegral_proj_fst_Integrable a c L k μ} {hcb : pathIntegral_proj_fst_Integrable c b L k μ} : pathIntegral_proj_fst a c L k μ + pathIntegral_proj_fst c b L k μ = pathIntegral_proj_fst a b L k μ := by
   unfold pathIntegral_proj_fst
   apply intervalIntegral.integral_add_adjacent_intervals
   repeat assumption
@@ -53,6 +53,7 @@ structure SimpleRegion (a b : ℝ) (f g : ℝ → ℝ) extends Region a b f g wh
   a_lt_b : a < b
 
 variable {a b : ℝ} {f g : ℝ → ℝ}
+variable {L : ℝ×ℝ → ℝ}
 variable (R : SimpleRegion a b f g)
 
 -- todo: version for arclength (|deriv| = 1) version and proof that |deriv| = 1, for use in integrability (or otherwise work out easier integrability)
@@ -81,6 +82,17 @@ theorem simple_boundary_continuous {hct : Continuous R.f_t} {hcb : Continuous R.
   all_goals continuity -- since this is aesop it could also do the simps above it, but have left them separate to keep purpose clearer
   done
 
+open PathIntegral
+
+theorem simple_boundary_path_proj_fst_Integrable : pathIntegral_proj_fst_Integrable a (b+1+b-a+1) L (simple_boundary_function R) := by
+  refine pathIntegral_proj_fst_Integrable_trans (c := b+1+b-a) ?_ ?_
+  refine pathIntegral_proj_fst_Integrable_trans (c := b+1) ?_ ?_
+  refine pathIntegral_proj_fst_Integrable_trans (c := b) ?_ ?_
+  -- need continuity within set implies integrable on that set, using Ico
+  -- need boundary is continuously diffable on piecewises
+  repeat sorry
+  done
+
 end Region
 
 namespace Green
@@ -98,10 +110,10 @@ variable {k : ℝ → ℝ×ℝ}
 -- other option is to cast the path parametrisation but idk how that works with deriv - actually doesn't work because that's sent to the function as well
 -- basically need to give the deriv some indication of what it's wrt ~~sneaky physicists~~
 -- the projected norm not being continuous at the corners causes issues as to split the parts have to be integrable, but atm can only split one at a time meaning the rest has to be integrable in whole
-theorem green_split_alpha (s_1 s_2 s_3 : ℝ) (hi0 : pathIntegral3_proj_fst_Integrable 0 s_1 L k) (hi1 : pathIntegral3_proj_fst_Integrable s_1 s_2 L k) (hi2 : pathIntegral3_proj_fst_Integrable s_2 s_3 L k) (hi3 : pathIntegral3_proj_fst_Integrable s_3 1 L k) (hs01 : pathIntegral_proj_fst 0 s_1 L k = ∫ x in a..b, L (x,f x)) (hs12 : pathIntegral_proj_fst s_1 s_2 L k = 0) (hs23 : pathIntegral_proj_fst s_2 s_3 L k = ∫ x in b..a, L (x,g x)) (hs30 : pathIntegral_proj_fst s_3 1 L k = 0): pathIntegral_proj_fst 0 1 L k = (∫ x in a..b, L (x,f x)) - ∫ x in a..b, L (x,g x) := by
-  have hi20 : pathIntegral3_proj_fst_Integrable s_2 1 L k := by
+theorem green_split_alpha (s_1 s_2 s_3 : ℝ) (hi0 : pathIntegral_proj_fst_Integrable 0 s_1 L k) (hi1 : pathIntegral_proj_fst_Integrable s_1 s_2 L k) (hi2 : pathIntegral_proj_fst_Integrable s_2 s_3 L k) (hi3 : pathIntegral_proj_fst_Integrable s_3 1 L k) (hs01 : pathIntegral_proj_fst 0 s_1 L k = ∫ x in a..b, L (x,f x)) (hs12 : pathIntegral_proj_fst s_1 s_2 L k = 0) (hs23 : pathIntegral_proj_fst s_2 s_3 L k = ∫ x in b..a, L (x,g x)) (hs30 : pathIntegral_proj_fst s_3 1 L k = 0): pathIntegral_proj_fst 0 1 L k = (∫ x in a..b, L (x,f x)) - ∫ x in a..b, L (x,g x) := by
+  have hi20 : pathIntegral_proj_fst_Integrable s_2 1 L k := by
     apply pathIntegral_proj_fst_Integrable_trans hi2 hi3
-  have hi10 : pathIntegral3_proj_fst_Integrable s_1 1 L k := by
+  have hi10 : pathIntegral_proj_fst_Integrable s_1 1 L k := by
     apply pathIntegral_proj_fst_Integrable_trans hi1 hi20
   rw [<- pathIntegral_proj_fst_split_at s_1]
   nth_rw 2 [<- pathIntegral_proj_fst_split_at s_2]

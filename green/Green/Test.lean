@@ -5,50 +5,38 @@ open Classical
 #allow_unused_tactic Lean.Parser.Tactic.done
 namespace Test
 
-variable {E F A : Type*} [NormedAddCommGroup E]
-variable {f : Option ℝ → ℝ}
---variable {f : ℝ → E} {a b : ℝ}
 
-structure Partition (a b : ℝ) : Type where
-  (points : List ℝ)
-  (nonempty : points ≠ [])
-  (zth : points.head? = some a)
-  (nth : points.reverse.head? = some b)
-  (ordered : ∀ i j, i < j → points.get? i < points.get? j)
+variable {f : ℝ → ℝ} {a b : ℝ}
 
-structure PartitionFamily (a b : ℝ) : Type where
-(partitions : ℕ → Partition a b)  -- A sequence of partitions
-(subintervals_tend_to_zero :
-  ∀ ε > 0, ∃ N, ∀ n ≥ N, ∀ (partition := partitions n),
-    ∀ i j, j = i + 1 →
-      match partition.points.get? i, partition.points.get? j with
-      | some xi, some xj => |xj - xi| < ε
-      | _, _ => false)
---is it better to define by max width or number of intervals?
 
 def seq_limit (u : ℕ → ℝ) (l : ℝ) :=
 ∀ ε > 0, ∃ N, ∀ n ≥ N, |u n - l| ≤ ε
 
-def continuous_at (f : Option ℝ → ℝ) (x₀ : ℝ) : Prop :=
+def continuous_at (f : ℝ → ℝ) (x₀ : ℝ) : Prop :=
 ∀ ε > 0, ∃ δ > 0, ∀ x, |x - x₀| < δ → |f x - f x₀| < ε
 
+noncomputable def max (S : Set ℝ) : ℝ :=
+  if h : ∃ m ∈ S, ∀ s ∈ S, s ≤ m then
+    Classical.choose h else default
 
-noncomputable def max (S : Set ℕ) : ℕ :=
+noncomputable def maxNat (S : Set ℕ) : ℕ :=
   if h : ∃ m ∈ S, ∀ s ∈ S, s ≤ m then
     Classical.choose h else default
 
 noncomputable def natFloor (n : ℝ) : ℕ :=
-max {m | m ≤ n}
+maxNat {m | m ≤ n}
 
+
+noncomputable def inf : ℝ := max {r | r > 0}
 
 def is_lim (f : ℝ → ℝ) (x₀ h : ℝ) : Prop :=
 ∀ ε > 0, ∃ δ > 0, ∀ x, |x - x₀| < δ → |f x - h| < ε
 
-noncomputable def lim (f : ℝ → ℝ) (l : ℝ) : Option ℝ :=
-if h : ∃ M, is_lim f l M then
-    some (Classical.choose h)
+noncomputable def lim (f : ℝ → ℝ) (l : ℝ) : ℝ :=
+if ∃ M, is_lim f l M then
+    f l
 else
-    none
+    default
 
 
 def differentiable_at (f : ℝ → ℝ) (x : ℝ) : Prop :=
@@ -57,15 +45,18 @@ def differentiable_at (f : ℝ → ℝ) (x : ℝ) : Prop :=
 def differentiable (f : ℝ → ℝ) : Prop :=
 ∀ x, differentiable_at f x
 
-noncomputable def deriv (f : ℝ → ℝ) (x : ℝ) : Option ℝ :=
+noncomputable def deriv (f : ℝ → ℝ) (x : ℝ) : ℝ :=
 lim (fun h : ℝ => (f (x + h) - f x) / h) 0
 
-def area (f : Option ℝ → ℝ) (a b : ℝ) (part : Partition a b) : ℝ :=
-∑ᶠ k ≤ (part.points.length-1), k = (f (part.points.get? ((part.points.length-1)-1)) * |part.points.get? (part.points.length-1) - part.points.get? ((part.points.length-1)-1)|)
---does it go from k=0 or k=1
 
-noncomputable def interval_integral (f : Option ℝ → ℝ) (a b : ℝ) : Option ℝ :=
-if ∀ x ∈ Set.Icc a b, continuous_at f x then
-  ∃ P : PartitionFamily a b, lim (fun n : ℝ => area f a b (P.partitions (natFloor n))) Inf.inf
+noncomputable def area (f : ℝ → ℝ) (a b : ℝ) (n : ℕ) : ℝ :=
+∑ k in Set.Icc 0 (n-1), (f (a + ↑k * (a - b) / ↑n) * 1/↑n)
+
+noncomputable def interval_integral (f : ℝ → ℝ) (a b : ℝ) : ℝ :=
+if (∀ x : Set.Icc a b, |f x| < inf) ∧ (∀ x : Set.Icc a b, continuous_at f x) then
+  lim (fun n : ℝ => area f a b (natFloor n)) inf
 else
-  none
+  default
+
+theorem int_c_eq_c_int {f g : ℝ → ℝ} (c : ℝ) (h: ∀ x ∈ Set.Icc a b, g x = c * f x)  : interval_integral g a b = c * interval_integral f a b :=
+sorry

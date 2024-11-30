@@ -27,6 +27,13 @@ def pathIntegral_proj_fst_Integrable (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ
 
 omit [IsLocallyFiniteMeasure μ]
 
+-- seems like this should work but intervalIntegable works with Icc, which this obviously won't be
+-- so back to arclength param :(
+-- theorem pathIntegral_proj_fst_Integrable_of_continuous_within_at {c : ℝ} (hac : pathIntegral_proj_fst_Integrable a c L k μ) (hcb : pathIntegral_proj_fst_Integrable c b L k μ) : pathIntegral_proj_fst_Integrable a b L k μ := by
+--   unfold pathIntegral_proj_fst_Integrable
+--   apply IntervalIntegrable.continuousOn_mul
+--   done
+
 theorem pathIntegral_proj_fst_Integrable_trans {c : ℝ} (hac : pathIntegral_proj_fst_Integrable a c L k μ) (hcb : pathIntegral_proj_fst_Integrable c b L k μ) : pathIntegral_proj_fst_Integrable a b L k μ := by
   unfold pathIntegral_proj_fst_Integrable
   apply IntervalIntegrable.trans hac hcb
@@ -89,6 +96,7 @@ theorem simple_boundary_path_proj_fst_Integrable : pathIntegral_proj_fst_Integra
   refine pathIntegral_proj_fst_Integrable_trans (c := b+1) ?_ ?_
   refine pathIntegral_proj_fst_Integrable_trans (c := b) ?_ ?_
   -- need continuity within set implies integrable on that set, using Ico
+  -- can't see a way to do above (maybe filters? but idk how to work with those at all) so arclength it is
   -- need boundary is continuously diffable on piecewises
   repeat sorry
   done

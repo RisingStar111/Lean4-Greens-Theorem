@@ -50,7 +50,7 @@ lim (fun h : ℝ => (f (x + h) - f x) / h) 0
 
 
 noncomputable def area (f : ℝ → ℝ) (a b : ℝ) (n : ℕ) : ℝ :=
-∑ k in Set.Icc 0 (n-1), (f (a + ↑k * (a - b) / ↑n) * 1/↑n)
+∑ k in Set.Icc 0 (n-1), (f (a + ↑k * (a - b) / ↑n) * (b - a) / ↑n)
 
 noncomputable def interval_integral (f : ℝ → ℝ) (a b : ℝ) : ℝ :=
 if (∀ x : Set.Icc a b, |f x| < inf) ∧ (∀ x : Set.Icc a b, continuous_at f x) then

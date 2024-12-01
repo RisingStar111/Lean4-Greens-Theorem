@@ -38,6 +38,25 @@ if ∃ M, is_lim f l M then
 else
     default
 
+theorem lim_const_eq_const {f : ℝ → ℝ} (l : ℝ) (c : ℝ) (h : ∀ x : ℝ, f x = c) : lim f l = c := by {
+  unfold lim
+  split_ifs with hlim
+  apply h
+
+  exfalso
+  apply hlim
+  use c
+  unfold is_lim
+  intro ε ε_pos
+  use 1
+  simp
+  intro x hδ
+  rw [h]
+  simp
+  exact ε_pos
+  done
+}
+
 
 def differentiable_at (f : ℝ → ℝ) (x : ℝ) : Prop :=
 ∀ ε > 0, ∃ δ > 0, ∀ h, ∃ M : ℝ, |h| < δ → |(f (x + h) - f x) / h| < M
@@ -53,10 +72,28 @@ noncomputable def area (f : ℝ → ℝ) (a b : ℝ) (n : ℕ) : ℝ :=
 ∑ k in Set.Icc 0 (n-1), (f (a + ↑k * (b - a) / ↑n) * (b - a) / ↑n)
 
 noncomputable def interval_integral (f : ℝ → ℝ) (a b : ℝ) : ℝ :=
-if (∀ x : Set.Icc a b, |f x| < inf) ∧ (∀ x : Set.Icc a b, continuous_at f x) then
+if ∀ x : Set.Icc a b, continuous_at f x then
   lim (fun n : ℝ => area f a b (natFloor n)) inf
 else
   default
 
-theorem int_c_eq_c_int {f g : ℝ → ℝ} (c : ℝ) (h: ∀ x ∈ Set.Icc a b, g x = c * f x)  : interval_integral g a b = c * interval_integral f a b :=
-sorry
+theorem int_aa_eq_zero {f : ℝ → ℝ} : interval_integral f a a = 0 := by {
+unfold interval_integral
+simp
+split
+unfold area
+simp
+apply lim_const_eq_const
+simp
+rfl
+done
+}
+
+theorem int_c_eq_c_int {f g : ℝ → ℝ} (c : ℝ) (h: ∀ x ∈ Set.Icc a b, g x = c * f x)  : interval_integral g a b = c * interval_integral f a b := by {
+unfold interval_integral
+split
+
+
+
+
+}

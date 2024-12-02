@@ -25,6 +25,69 @@ variable [IsLocallyFiniteMeasure μ] -- not sure why this behaves differently to
 def pathIntegral_proj_fst_Integrable (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : Measure ℝ := volume) : Prop :=
   IntervalIntegrable (fun x ↦ (f (r x)) * norm ((deriv r x).fst)) μ a b
 
+theorem norm_continuous_pathIntegral_proj_fst_intervalIntegrable {hl : Continuous L} {hk : Continuous k} {hdk : Continuous (fun x ↦ ‖(deriv k x).fst‖)} : pathIntegral_proj_fst_Integrable a b L k μ := by
+  refine Continuous.intervalIntegrable ?h a b
+  -- continuity
+  apply Continuous.mul
+  exact Continuous.comp' hl hk
+  exact hdk
+  done
+-- since above is still too strong
+
+-- theorem mul_congr_ae_func (s : Set ℝ) (q : ℝ → ℝ) (hg : f =ᶠ[ae (μ.restrict s)] g) : (fun x ↦ q x * f x) =ᶠ[ae (μ.restrict s)] (fun x ↦ q x * g x) := by
+--   apply Filter.EventuallyEq.mul _ hg
+--   rfl
+--   done
+
+theorem congr_ae_norm_continuous_pathIntegral_proj_fst_intervalIntegrable_Ioc [NoAtoms μ] {hab : a ≤ b} {hl : Continuous L} {hk : Continuous k} (o : ℝ → ℝ×ℝ) (hdo : Continuous (fun x ↦ ‖(deriv o x).fst‖)) (hst : (fun x ↦ ‖(deriv k x).fst‖) =ᵐ[μ.restrict (Set.Ioc a b)] (fun x ↦ ‖(deriv o x).fst‖)) : pathIntegral_proj_fst_Integrable a b L k μ := by
+  -- was having a lot of trouble getting it to know that Set.Ico is a Set R
+  -- apparently the problem was that i was delaying that definition to a variable, and then it was tryingto coerce it but couldn't
+
+  unfold pathIntegral_proj_fst_Integrable
+  rw [intervalIntegrable_iff_integrableOn_Ioc_of_le hab]
+
+  suffices IntegrableOn (fun x ↦ L (k x) * ‖(deriv o x).1‖) (Set.Ioc a b) μ by
+    -- look what i found
+    apply IntegrableOn.congr_fun_ae this (f := (fun x ↦ L (k x) * ‖(deriv o x).1‖))
+    apply Filter.EventuallyEq.mul
+    simp
+    apply Filter.EventuallyEq.symm hst
+    -- can't even multiple by a thing - granted this is somewhat fair but the thing is nice to multiply by
+    -- not even a chance tho
+    -- all this to not even (yet) avoid a condition on the gradient of the boundary function at the corners
+    -- ~~a condition that is always achievable given the constraints~~
+    -- sorry
+
+  rw [<- integrableOn_Icc_iff_integrableOn_Ioc]
+  refine Continuous.integrableOn_Icc ?_
+  apply Continuous.mul
+  continuity
+  assumption
+  -- refine Continuous.intervalIntegrable ?h a b
+  -- apply Continuous.mul
+  -- exact Continuous.comp' hl hk
+  -- exact hdk
+  done
+  -- all came together in the end, nice
+  -- remains to be seen if i can actually utilise this
+
+-- so (looking at how intervalintegral does it) i actually needed to be looking at 'function.locallyintegrable' ofc yes that makes sense
+-- variable [NoAtoms μ]
+-- theorem intervalIntegral_of_continuous_on_Ico {hab : a ≤ b}: IntervalIntegrable f μ a b := by
+--   rw [intervalIntegrable_iff_integrableOn_Ico_of_le]
+--   rw [<- integrableOn_Icc_iff_integrableOn_Ico]
+--   apply ContinuousOn.integrableOn_Icc
+--   sorry
+--   done
+
+-- ok *now* i'm fairly confident what i actually actually need is MeasureTheory.IntegrableOn.congr_fun_ae
+-- but with this probably easiest to work with the explicit function
+-- similar but can use above and iff unrestriction integrable
+-- theorem intervalIntegral_of_bounded_continuous_on_Ico {hab : a ≤ b}: IntervalIntegrable f μ a b := by
+
+--   sorry
+--   done
+
 omit [IsLocallyFiniteMeasure μ]
 
 -- seems like this should work but intervalIntegable works with Icc, which this obviously won't be
@@ -91,13 +154,33 @@ theorem simple_boundary_continuous {hct : Continuous R.f_t} {hcb : Continuous R.
 
 open PathIntegral
 
+-- don't actually need this? just the separate parts since it's constructivist in green's anyway atm, tho good isolated test (also idk if trans works backwards)
 theorem simple_boundary_path_proj_fst_Integrable : pathIntegral_proj_fst_Integrable a (b+1+b-a+1) L (simple_boundary_function R) := by
   refine pathIntegral_proj_fst_Integrable_trans (c := b+1+b-a) ?_ ?_
   refine pathIntegral_proj_fst_Integrable_trans (c := b+1) ?_ ?_
   refine pathIntegral_proj_fst_Integrable_trans (c := b) ?_ ?_
-  -- need continuity within set implies integrable on that set, using Ico
+  -- need continuity within set implies integrable on that set, using Ico (oh needs bounded too)
   -- can't see a way to do above (maybe filters? but idk how to work with those at all) so arclength it is
+  -- ah hmm i can convert interval integrability -> measure integrability -> use their lemmas on removing/adding endpoints
+  -- but that's only got atfilter for from continuous functions...
   -- need boundary is continuously diffable on piecewises
+  -- this is actually where using paths instead of explicit funtions could be helpful
+
+  ·
+    have hl : Continuous L := by
+      sorry
+    have hr : Continuous (simple_boundary_function R) := by
+      sorry
+    suffices MeasureTheory.IntegrableOn (fun x ↦ ‖(deriv (simple_boundary_function R) x).1‖) (Set.Ico a b) by
+      apply norm_continuous_pathIntegral_proj_fst_intervalIntegrable (hl := hl) (hk := hr)
+      unfold pathIntegral_proj_fst_Integrable
+      apply intervalIntegrable_iff.mpr
+    -- suffices ContinuousOn (fun x ↦ ‖(deriv (simple_boundary_function R) x).1‖) (Set.Ico a b) by
+
+    unfold pathIntegral_proj_fst_Integrable
+    unfold simple_boundary_function
+    simp
+
   repeat sorry
   done
 

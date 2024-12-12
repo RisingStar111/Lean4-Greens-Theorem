@@ -39,27 +39,32 @@ theorem norm_continuous_pathIntegral_proj_fst_intervalIntegrable {hl : Continuou
 --   rfl
 --   done
 
-theorem congr_ae_norm_continuous_pathIntegral_proj_fst_intervalIntegrable_Ioc [NoAtoms μ] {hab : a ≤ b} {hl : Continuous L} {hk : Continuous k} (o : ℝ → ℝ×ℝ) (hdo : Continuous (fun x ↦ ‖(deriv o x).fst‖)) (hst : (fun x ↦ ‖(deriv k x).fst‖) =ᵐ[μ.restrict (Set.Ioc a b)] (fun x ↦ ‖(deriv o x).fst‖)) : pathIntegral_proj_fst_Integrable a b L k μ := by
+-- theorem congr_ae_norm_continuous_pathIntegral_proj_fst_intervalIntegrable_Ioc [NoAtoms μ] {hab : a ≤ b} {hl : Continuous L} {hk : Continuous k} (o : ℝ → ℝ×ℝ) (hdo : Continuous (fun x ↦ ‖(deriv o x).fst‖)) (hst : (fun x ↦ ‖(deriv k x).fst‖) =ᵐ[μ.restrict (Set.Ico a b)] (fun x ↦ ‖(deriv o x).fst‖)) : pathIntegral_proj_fst_Integrable a b L k μ := by
+theorem congr_ae_norm_continuous_pathIntegral_proj_fst_intervalIntegrable_Ioo [NoAtoms μ] {hab : a ≤ b} {hl : Continuous L} {hk : Continuous k} (o : ℝ → ℝ×ℝ) (hdo : Continuous (fun x ↦ ‖(deriv o x).fst‖)) (hst : Set.EqOn (fun x ↦ ‖(deriv k x).fst‖) (fun x ↦ ‖(deriv o x).fst‖) (Set.Ioo a b)) : pathIntegral_proj_fst_Integrable a b L k μ := by
   -- was having a lot of trouble getting it to know that Set.Ico is a Set R
   -- apparently the problem was that i was delaying that definition to a variable, and then it was tryingto coerce it but couldn't
 
   unfold pathIntegral_proj_fst_Integrable
-  rw [intervalIntegrable_iff_integrableOn_Ioc_of_le hab]
+  rw [intervalIntegrable_iff_integrableOn_Ioo_of_le hab]
 
-  suffices IntegrableOn (fun x ↦ L (k x) * ‖(deriv o x).1‖) (Set.Ioc a b) μ by
-    -- look what i found
-    apply IntegrableOn.congr_fun_ae this (f := (fun x ↦ L (k x) * ‖(deriv o x).1‖))
-    apply Filter.EventuallyEq.mul
-    simp
-    apply Filter.EventuallyEq.symm hst
+  suffices IntegrableOn (fun x ↦ L (k x) * ‖(deriv o x).1‖) (Set.Ioo a b) μ by
+    apply IntegrableOn.congr_fun this
+    exact fun ⦃x⦄ a_1 ↦ congrArg (HMul.hMul (L (k x))) (id (Set.EqOn.symm hst) a_1) -- apply? moment
+    exact measurableSet_Ioo
+  -- suffices IntegrableOn (fun x ↦ L (k x) * ‖(deriv o x).1‖) (Set.Ico a b) μ by
+  --   -- look what i found
+  --   apply IntegrableOn.congr_fun_ae this (f := (fun x ↦ L (k x) * ‖(deriv o x).1‖))
+  --   apply Filter.EventuallyEq.mul
+  --   simp only [ae_restrict_eq, Filter.EventuallyEq.refl]
+  --   apply Filter.EventuallyEq.symm hst
     -- can't even multiple by a thing - granted this is somewhat fair but the thing is nice to multiply by
     -- not even a chance tho
     -- all this to not even (yet) avoid a condition on the gradient of the boundary function at the corners
     -- ~~a condition that is always achievable given the constraints~~
     -- sorry
 
-  rw [<- integrableOn_Icc_iff_integrableOn_Ioc]
-  refine Continuous.integrableOn_Icc ?_
+  rw [<- integrableOn_Icc_iff_integrableOn_Ioo]
+  apply Continuous.integrableOn_Icc
   apply Continuous.mul
   continuity
   assumption
@@ -134,7 +139,7 @@ def simple_boundary_function : ℝ → ℝ×ℝ :=
       (Set.piecewise (Set.Iio (R.b+1+R.b-R.a)) (fun r ↦ (R.b+1+R.b - r, R.f_t (R.b+1+R.b - r)))
         (fun r ↦ (R.a, (R.f_t R.a) - (r-(R.b+1+R.b-R.a)) * (R.f_t R.a - R.f_b R.a)))))
 
-theorem simple_boundary_continuous {hct : Continuous R.f_t} {hcb : Continuous R.f_b} : Continuous (simple_boundary_function R) := by
+theorem simple_boundary_continuous (hct : Continuous R.f_t) (hcb : Continuous R.f_b) : Continuous (simple_boundary_function R) := by
   unfold simple_boundary_function
   apply Continuous.piecewise
   simp
@@ -154,11 +159,25 @@ theorem simple_boundary_continuous {hct : Continuous R.f_t} {hcb : Continuous R.
 
 open PathIntegral
 
+-- theorem aa (f : ℝ → ℝ): Continuous (deriv f) → ContDiff ℝ 1 f := by
+--   intro a
+--   apply contDiff_one_iff_deriv.mpr
+--   apply And.intro
+
+-- theorem ab (f : ℝ → ℝ) : ∀x, (deriv (fun r ↦ (Prod.mk r (f r))) x) = (1, deriv f x) := by
+--   intro x
+--   -- apply Prod.ext
+--   -- simp
+--   apply deriv_finset_prod
+--   apply Prod.
+--   refine HasDerivAt.deriv ?h
+--   apply HasDerivAt.finset_prod
+
 -- don't actually need this? just the separate parts since it's constructivist in green's anyway atm, tho good isolated test (also idk if trans works backwards)
-theorem simple_boundary_path_proj_fst_Integrable : pathIntegral_proj_fst_Integrable a (b+1+b-a+1) L (simple_boundary_function R) := by
-  refine pathIntegral_proj_fst_Integrable_trans (c := b+1+b-a) ?_ ?_
-  refine pathIntegral_proj_fst_Integrable_trans (c := b+1) ?_ ?_
-  refine pathIntegral_proj_fst_Integrable_trans (c := b) ?_ ?_
+theorem simple_boundary_path_proj_fst_Integrable (hct : Continuous R.f_t) (hcb : Continuous R.f_b) {hl : Continuous L} {hrb : Continuous (deriv fun x ↦ (x, R.f_b x))} {hrb2 : Differentiable ℝ fun x ↦ (x, R.f_b x)} : pathIntegral_proj_fst_Integrable R.a (R.b+1+R.b-R.a+1) L (simple_boundary_function R) := by
+  refine pathIntegral_proj_fst_Integrable_trans (c := R.b+1+R.b-R.a) ?_ ?_
+  refine pathIntegral_proj_fst_Integrable_trans (c := R.b+1) ?_ ?_
+  refine pathIntegral_proj_fst_Integrable_trans (c := R.b) ?_ ?_
   -- need continuity within set implies integrable on that set, using Ico (oh needs bounded too)
   -- can't see a way to do above (maybe filters? but idk how to work with those at all) so arclength it is
   -- ah hmm i can convert interval integrability -> measure integrability -> use their lemmas on removing/adding endpoints
@@ -167,20 +186,102 @@ theorem simple_boundary_path_proj_fst_Integrable : pathIntegral_proj_fst_Integra
   -- this is actually where using paths instead of explicit funtions could be helpful
 
   ·
-    have hl : Continuous L := by
-      sorry
     have hr : Continuous (simple_boundary_function R) := by
-      sorry
-    suffices MeasureTheory.IntegrableOn (fun x ↦ ‖(deriv (simple_boundary_function R) x).1‖) (Set.Ico a b) by
-      apply norm_continuous_pathIntegral_proj_fst_intervalIntegrable (hl := hl) (hk := hr)
-      unfold pathIntegral_proj_fst_Integrable
-      apply intervalIntegrable_iff.mpr
+      apply simple_boundary_continuous R hct hcb
+    apply congr_ae_norm_continuous_pathIntegral_proj_fst_intervalIntegrable_Ioo
+    apply le_of_lt
+    apply R.a_lt_b
+    exact hl
+    exact hr
+    pick_goal 3
+    use fun r ↦ (r, R.f_b r)
+    -- apply Continuous.norm
+    -- -- wait the x component of the deriv of the horiz is always 1...
+    -- -- doesn't matter cuz i can't work out how to manipulate the deriv into the product
+    -- apply Continuous.fst
+    continuity
+    apply Set.EqOn.comp_left
+    apply Set.EqOn.comp_left
+
+    -- have : ∀ x ∈ (Set.Ico R.a R.b), deriv (simple_boundary_function R) x = deriv (fun r ↦ (r, R.f_b r)) x := by
+    --   -- aesop
+    --   intro x h
+    --   refine Filter.EventuallyEq.deriv_eq ?hL
+    --   unfold simple_boundary_function
+
+
+    --   done
+
+    suffices : Set.EqOn (simple_boundary_function R) (fun r ↦ (r, R.f_b r)) (Set.Ioo R.a R.b)
+    ·
+      apply deriv_eqOn -- sure, need to be on open set, but this still doesn't help me actually get the range into the boundary
+      exact isOpen_Ioo
+      have hhhhh : ∀ x ∈ Set.Ioo R.a R.b, (simple_boundary_function R) x = (fun r ↦ (r, R.f_b r)) x:= by
+        intro x a_1
+        apply this
+        simp_all only [Set.mem_Ioo, and_self] -- aesop simplified
+
+      intro x hx
+      refine HasDerivWithinAt.congr_of_mem ?kk this hx
+      rw [<- derivWithin_of_isOpen, hasDerivWithinAt_derivWithin_iff,]
+      apply DifferentiableAt.differentiableWithinAt
+      apply Differentiable.differentiableAt
+      have ldld : (ContDiff ℝ 1 (fun r ↦ (r, R.f_b r))) := by
+        rw [contDiff_one_iff_deriv]
+        apply And.intro
+        exact hrb2
+        exact hrb
+      apply ContDiff.differentiable ldld
+      exact Preorder.le_refl 1
+      exact isOpen_Ioo
+      exact hx
+
+    -- apply Set.EqOn
+    -- unfold Set.EqOn
+    -- -- rw [congrArg deriv]
+    -- -- pick_goal 3
+    -- -- use simple_boundary_function R
+    -- -- swap; rfl
+    -- intro x a_1
+    -- simp_all only [Set.mem_Ico]
+    -- obtain ⟨left, right⟩ := a_1 -- idk what all this is, aesop. probably useful to know tho, like congrArg
+    -- unfold simple_boundary_function
+    -- apply congrArg
+    -- rw [congrArg deriv] -- this eats the x dependance
+    -- apply Set.piecewise_
+
+    -- apply Filter.EventuallyEq.fun_comp
+    -- apply Filter.EventuallyEq.fun_comp
+    -- unfold simple_boundary_function
+
+
+    -- let jj : ℕ → ℝ → ℝ :=
+    --   fun x ↦ (if x = 1 then fun x ↦ x else fun x ↦ R.f_b x)
+
+    -- have : ∏ i ∈ {0,1}, jj i = fun x ↦ (x, R.f_b x) := by
+
+
+    -- apply contDiff_prod
+    -- apply contDiff_one_iff_deriv
+    -- have : deriv (fun x ↦ (R.f_b x, R.f_b x)) = fun x ↦ (deriv R.f_b x, deriv R.f_b x) := by
+    --   simp
+    -- apply deriv_comp
+
+    -- suffices MeasureTheory.IntegrableOn (fun x ↦ ‖(deriv (simple_boundary_function R) x).1‖) (Set.Ico a b) by
+    --   apply norm_continuous_pathIntegral_proj_fst_intervalIntegrable (hl := hl) (hk := hr)
+    --   unfold pathIntegral_proj_fst_Integrable
+    --   apply intervalIntegrable_iff.mpr
     -- suffices ContinuousOn (fun x ↦ ‖(deriv (simple_boundary_function R) x).1‖) (Set.Ico a b) by
 
-    unfold pathIntegral_proj_fst_Integrable
+    -- unfold pathIntegral_proj_fst_Integrable
     unfold simple_boundary_function
-    simp
-
+    simp_rw [Set.eqOn_piecewise]
+    rw [<- min_self R.b ,<- Set.Ioo_inter_Iio (a := R.a) (b := R.b) (c := R.b), min_self]
+    simp_rw [Set.inter_assoc _ (Set.Iio R.b), Set.inter_compl_self (Set.Iio R.b)]
+    -- mostly aesop
+    simp_all only [differentiable_id', Set.inter_self, Set.inter_empty, Set.empty_inter, Set.eqOn_empty, Set.compl_Iio, and_self, and_true]
+    exact fun ⦃x⦄ ↦ congrFun rfl
+    -- that was one (and the easiest) case lmao
   repeat sorry
   done
 

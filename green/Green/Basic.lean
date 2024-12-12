@@ -25,6 +25,20 @@ variable [IsLocallyFiniteMeasure μ] -- not sure why this behaves differently to
 def pathIntegral_proj_fst_Integrable (a b : ℝ) (f : ℝ×ℝ → ℝ) (r : ℝ → ℝ×ℝ) (μ : Measure ℝ := volume) : Prop :=
   IntervalIntegrable (fun x ↦ (f (r x)) * norm ((deriv r x).fst)) μ a b
 
+theorem pathIntegral_proj_fst_Integrable_translate_zero (hi : pathIntegral_proj_fst_Integrable a b L k MeasureTheory.volume) : pathIntegral_proj_fst_Integrable 0 (b-a) L (fun x ↦ k (x+a)) MeasureTheory.volume := by
+  have haa : a - a = 0 := by
+    simp
+  unfold pathIntegral_proj_fst_Integrable
+  simp_rw [<- haa, deriv_comp_add_const]
+  have : (fun x ↦ L (k (x + a)) * ‖(deriv k (x + a)).1‖) = fun x ↦ ((fun x ↦ L (k (x)) * ‖(deriv k (x)).1‖) (x + a)) := by
+    rfl
+  rw [this]
+  -- let ff := (fun x ↦ L (k (x)) * ‖(deriv k (x)).1‖)
+  -- generalize (fun x ↦ L (k (x)) * ‖(deriv k (x)).1‖) = ff
+  apply IntervalIntegrable.comp_add_right (f := (fun x ↦ L (k (x)) * ‖(deriv k (x)).1‖))-- not sure what complicated this so much
+  exact hi
+  done
+
 theorem norm_continuous_pathIntegral_proj_fst_intervalIntegrable {hl : Continuous L} {hk : Continuous k} {hdk : Continuous (fun x ↦ ‖(deriv k x).fst‖)} : pathIntegral_proj_fst_Integrable a b L k μ := by
   refine Continuous.intervalIntegrable ?h a b
   -- continuity
@@ -473,7 +487,7 @@ variable {k : ℝ → ℝ×ℝ}
 -- other option is to cast the path parametrisation but idk how that works with deriv - actually doesn't work because that's sent to the function as well
 -- basically need to give the deriv some indication of what it's wrt ~~sneaky physicists~~
 -- the projected norm not being continuous at the corners causes issues as to split the parts have to be integrable, but atm can only split one at a time meaning the rest has to be integrable in whole
-theorem green_split_alpha (s_1 s_2 s_3 : ℝ) (hi0 : pathIntegral_proj_fst_Integrable 0 s_1 L k) (hi1 : pathIntegral_proj_fst_Integrable s_1 s_2 L k) (hi2 : pathIntegral_proj_fst_Integrable s_2 s_3 L k) (hi3 : pathIntegral_proj_fst_Integrable s_3 1 L k) (hs01 : pathIntegral_proj_fst 0 s_1 L k = ∫ x in a..b, L (x,f x)) (hs12 : pathIntegral_proj_fst s_1 s_2 L k = 0) (hs23 : pathIntegral_proj_fst s_2 s_3 L k = ∫ x in b..a, L (x,g x)) (hs30 : pathIntegral_proj_fst s_3 1 L k = 0): pathIntegral_proj_fst 0 1 L k = (∫ x in a..b, L (x,f x)) - ∫ x in a..b, L (x,g x) := by
+theorem green_split_alpha (s_1 s_2 s_3 : ℝ) (hi0 : pathIntegral_proj_fst_Integrable 0 s_1 L k) (hi1 : pathIntegral_proj_fst_Integrable s_1 s_2 L k) (hi2 : pathIntegral_proj_fst_Integrable s_2 s_3 L k) (hi3 : pathIntegral_proj_fst_Integrable s_3 1 L k) (hs01 : pathIntegral_proj_fst 0 s_1 L k = ∫ x in a..b, L (x,f x)) (hs12 : pathIntegral_proj_fst s_1 s_2 L k = 0) (hs23 : pathIntegral_proj_fst s_2 s_3 L k = ∫ x in b..a, L (x,g x)) (hs30 : pathIntegral_proj_fst s_3 1 L k = 0) : pathIntegral_proj_fst 0 1 L k = (∫ x in a..b, L (x,f x)) - ∫ x in a..b, L (x,g x) := by
   have hi20 : pathIntegral_proj_fst_Integrable s_2 1 L k := by
     apply pathIntegral_proj_fst_Integrable_trans hi2 hi3
   have hi10 : pathIntegral_proj_fst_Integrable s_1 1 L k := by
@@ -485,6 +499,14 @@ theorem green_split_alpha (s_1 s_2 s_3 : ℝ) (hi0 : pathIntegral_proj_fst_Integ
   rw [hs01, hs12, hs23, hs30, intervalIntegral.integral_symm a b]
   simp
   rfl
+  done
+
+theorem green_split {R : Region.SimpleRegion a b f g } {hL : Continuous L} : pathIntegral_proj_fst 0 1 L k = (∫ x in a..b, L (x,f x)) - ∫ x in a..b, L (x,g x) := by
+  have hbi : pathIntegral_proj_fst_Integrable R.a (R.b+1+R.b-R.a+1) L (Region.simple_boundary_function R) := by
+    apply Region.simple_boundary_path_proj_fst_Integrable
+    exact hL
+  apply pathIntegral_proj_fst_Integrable_translate_zero at hbi
+
   done
 
 theorem rhs_sub (hlcd : ∀x, Continuous (deriv fun w ↦ L (x, w))) (hlc : Continuous L) (hfc : Continuous f) (hgc : Continuous g) (hdf : ∀x, Differentiable ℝ (fun w ↦ L (x,w))) : ∫ x in a..b, (∫ y in (g x)..(f x), (-(deriv (fun w ↦ L (x,w)))) y) = (∫ x in a..b, L (x,g x)) - ∫ x in a..b, L (x,f x) := by

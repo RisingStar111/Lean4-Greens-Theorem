@@ -330,13 +330,79 @@ theorem simple_boundary_path_proj_fst_Integrable (hct : Continuous R.f_t) (hcb :
     unfold simple_boundary_function
     simp_rw [Set.eqOn_piecewise]
     rw [<- min_self (R.b + 1 + R.b - R.a), <- Set.Ioo_inter_Iio (a := (R.b + 1)) (b := (R.b + 1 + R.b - R.a)) (c := (R.b + 1 + R.b - R.a)), min_self]
-    aesop
     -- there has to be a better way to do this
-    simp_rw [Set.inter_assoc _ (Set.Iio (R.b + 1 + R.b - R.a)), Set.inter_comm (Set.Iio (R.b + 1 + R.b - R.a)), Set.inter_assoc _ _ (Set.Iio (R.b + 1 + R.b - R.a))ᶜ, Set.inter_compl_self (Set.Iio (R.b + 1 + R.b - R.a)), Set.Iio_inter_Iio, Set.Ioo_inter_Iio]
+    simp_rw [Set.inter_assoc, Set.inter_comm (Set.Iio (R.b + 1 + R.b - R.a)), Set.inter_assoc, Set.inter_comm, Set.inter_compl_self (Set.Iio (R.b + 1 + R.b - R.a)), Set.Iio_inter_Iio, Set.inter_assoc, Set.Iio_inter_Ioo]
     simp
     exact fun ⦃x⦄ ↦ congrFun rfl
 
-  repeat sorry
+  · let ff : ℝ → ℝ×ℝ := fun r ↦ (R.a, R.f_t R.a - (r - (R.b + 1 + R.b - R.a)) * (R.f_t R.a - R.f_b R.a))
+    apply boundary_part_integrable R hct ff hcb (R.b + 1 + R.b - R.a) (R.b + 1 + R.b - R.a + 1) _ _ (hl := hl)
+    sorry
+    sorry
+    simp
+
+    unfold simple_boundary_function
+    simp_rw [Set.eqOn_piecewise]
+    rw [<- min_self (R.b + 1 + R.b - R.a + 1), <- Set.Ioo_inter_Iio (a := (R.b + 1 + R.b - R.a)) (b := (R.b + 1 + R.b - R.a + 1)) (c := (R.b + 1 + R.b - R.a + 1))]
+    -- there has to be a better way to do this
+    -- simp_rw [Set.inter_assoc, Set.inter_comm (Set.Iio (R.b + 1 + R.b - R.a + 1)), Set.inter_assoc, Set.inter_comm, Set.inter_compl_self (Set.Iio (R.b + 1 + R.b - R.a + 1)), Set.Iio_inter_Iio, Set.inter_assoc, Set.Iio_inter_Ioo]
+    simp_rw [Set.Ioo_inter_Iio]
+    simp_rw [Set.inter_assoc]
+    repeat simp_rw [Set.inter_comm _ (Set.Iio _), <- Set.inter_assoc]
+    simp
+    aesop
+    have : (R.b + 1 + R.b - R.a + 1) ⊓ R.b = R.b := by
+      simp
+      simp_rw [add_sub_assoc, add_assoc]
+      simp
+      nth_rw 2 [add_comm]
+      simp_rw [<- add_assoc, <- add_sub_assoc]
+      simp
+      simp_rw [add_comm]
+      apply le_add_of_le_of_nonneg
+      apply le_of_lt
+      exact R.a_lt_b
+      simp
+    rw [this]
+    rw [Set.Ioo_eq_empty_of_le]
+    simp
+    have : R.b ≤ R.b + 1 + R.b - R.a := by
+      apply le_of_lt
+      simp_rw [add_sub_assoc, add_assoc]
+      simp
+      simp_rw [<- add_sub_assoc]
+      simp
+      simp_rw [add_comm]
+      apply lt_add_of_lt_of_nonneg
+      exact R.a_lt_b
+      simp
+    exact this
+
+    rw [Set.Iio_inter_Ioo]
+    have : (R.b + 1) ⊓ (R.b + 1 + R.b - R.a + 1) = R.b + 1 := by
+      simp
+      apply le_of_lt
+      simp_rw [add_sub_assoc, add_assoc]
+      simp
+      simp_rw [<- add_sub_assoc]
+      simp
+      simp_rw [add_comm]
+      apply lt_add_of_lt_of_nonneg
+      exact R.a_lt_b
+      simp
+    rw [this]
+    rw [Set.Ioo_eq_empty_of_le]
+    simp
+    apply le_of_lt
+    rw [add_sub_assoc]
+    simp
+    exact R.a_lt_b
+
+    rw [Set.Iio_inter_Ioo]
+    simp
+
+    exact fun ⦃x⦄ ↦ congrFun rfl
+
   done
 
 end Region

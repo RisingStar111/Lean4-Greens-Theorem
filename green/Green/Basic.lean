@@ -126,6 +126,8 @@ namespace Region
 structure SimpleRegion (a b : ℝ) (f g : ℝ → ℝ) extends Region a b f g where
   no_cross : ∀ x, f_b x <= f_t x
   a_lt_b : a < b
+  b_contDiff : ContDiff ℝ 1 f_b
+  t_contDiff : ContDiff ℝ 1 f_t
 
 variable {a b : ℝ} {f g : ℝ → ℝ}
 variable {L : ℝ×ℝ → ℝ}
@@ -278,7 +280,16 @@ theorem boundary_part_integrable {a b : ℝ} {f g : ℝ → ℝ} {L : ℝ × ℝ
   -- that was one (and the easiest) case lmao
 
 -- don't actually need this? just the separate parts since it's constructivist in green's anyway atm, tho good isolated test (also idk if trans works backwards)
-theorem simple_boundary_path_proj_fst_Integrable (hct : Continuous R.f_t) (hcb : Continuous R.f_b) {hl : Continuous L} {hrb : Continuous (deriv fun x ↦ (x, R.f_b x))} {hrb2 : Differentiable ℝ fun x ↦ (x, R.f_b x)} : pathIntegral_proj_fst_Integrable R.a (R.b+1+R.b-R.a+1) L (simple_boundary_function R) := by
+theorem simple_boundary_path_proj_fst_Integrable {hl : Continuous L} : pathIntegral_proj_fst_Integrable R.a (R.b+1+R.b-R.a+1) L (simple_boundary_function R) := by
+
+  have hct : Continuous R.f_t := by
+    apply ContDiff.continuous R.t_contDiff
+
+  have hcb : Continuous R.f_b := by
+    apply ContDiff.continuous R.b_contDiff
+
+
+
   refine pathIntegral_proj_fst_Integrable_trans (c := R.b+1+R.b-R.a) ?_ ?_
   refine pathIntegral_proj_fst_Integrable_trans (c := R.b+1) ?_ ?_
   refine pathIntegral_proj_fst_Integrable_trans (c := R.b) ?_ ?_
@@ -290,7 +301,13 @@ theorem simple_boundary_path_proj_fst_Integrable (hct : Continuous R.f_t) (hcb :
   -- this is actually where using paths instead of explicit funtions could be helpful
 
   · let ff : ℝ → ℝ×ℝ := fun r ↦ (r, R.f_b r)
-    apply boundary_part_integrable R hct ff hcb R.a R.b R.a_lt_b _ (hl := hl) (hrb := hrb) (hrb2 := hrb2)
+    have fcd : ContDiff ℝ 1 ff := by
+      apply ContDiff.prod
+      exact contDiff_id
+      exact R.b_contDiff
+    apply boundary_part_integrable R hct ff hcb R.a R.b R.a_lt_b _ (hl := hl)
+    apply ContDiff.continuous_deriv (n := 1) fcd (le_refl 1)
+    apply ContDiff.differentiable (n := 1) fcd (le_refl 1)
 
     unfold simple_boundary_function
     simp_rw [Set.eqOn_piecewise]
@@ -302,9 +319,21 @@ theorem simple_boundary_path_proj_fst_Integrable (hct : Continuous R.f_t) (hcb :
 
  -- todo: maybe write a custom tactic for this intersection nonsense?
   · let ff : ℝ → ℝ×ℝ := fun r ↦ (R.b, R.f_b R.b + (r - R.b) * (R.f_t R.b - R.f_b R.b))
+    have fcd : ContDiff ℝ 1 ff := by
+      -- simp_all [contDiff_id, ContDiff.prod, contDiff_const, ContDiff.add, ContDiff.mul] -- no work
+      apply ContDiff.prod
+      exact contDiff_const
+      apply ContDiff.add
+      exact contDiff_const
+      apply ContDiff.mul
+      apply ContDiff.sub
+      exact contDiff_id
+      exact contDiff_const
+      exact contDiff_const --ja what is this
+
     apply boundary_part_integrable R hct ff hcb R.b (R.b + 1) _ _ (hl := hl)
-    sorry
-    sorry
+    apply ContDiff.continuous_deriv (n := 1) fcd (le_refl 1)
+    apply ContDiff.differentiable (n := 1) fcd (le_refl 1)
     exact lt_add_one R.b
 
     unfold simple_boundary_function
@@ -315,9 +344,20 @@ theorem simple_boundary_path_proj_fst_Integrable (hct : Continuous R.f_t) (hcb :
     exact fun ⦃x⦄ ↦ congrFun rfl
 
   · let ff : ℝ → ℝ×ℝ := fun r ↦ (R.b + 1 + R.b - r, R.f_t (R.b + 1 + R.b - r))
+    have fcd : ContDiff ℝ 1 ff := by
+      apply ContDiff.prod
+      apply ContDiff.sub
+      exact contDiff_const
+      exact contDiff_id
+      apply ContDiff.comp
+      exact R.t_contDiff
+      apply ContDiff.sub
+      exact contDiff_const
+      exact contDiff_id
+
     apply boundary_part_integrable R hct ff hcb (R.b + 1) (R.b + 1 + R.b - R.a) _ _ (hl := hl)
-    sorry
-    sorry
+    apply ContDiff.continuous_deriv (n := 1) fcd (le_refl 1)
+    apply ContDiff.differentiable (n := 1) fcd (le_refl 1)
     have haa : (R.b + 1) + 0 = R.b + 1 := by
       simp
     nth_rw 1 [<- haa]
@@ -336,9 +376,20 @@ theorem simple_boundary_path_proj_fst_Integrable (hct : Continuous R.f_t) (hcb :
     exact fun ⦃x⦄ ↦ congrFun rfl
 
   · let ff : ℝ → ℝ×ℝ := fun r ↦ (R.a, R.f_t R.a - (r - (R.b + 1 + R.b - R.a)) * (R.f_t R.a - R.f_b R.a))
+    have fcd : ContDiff ℝ 1 ff := by
+      apply ContDiff.prod
+      exact contDiff_const
+      apply ContDiff.sub
+      exact contDiff_const
+      apply ContDiff.mul
+      apply ContDiff.sub
+      exact contDiff_id
+      exact contDiff_const
+      exact contDiff_const
+
     apply boundary_part_integrable R hct ff hcb (R.b + 1 + R.b - R.a) (R.b + 1 + R.b - R.a + 1) _ _ (hl := hl)
-    sorry
-    sorry
+    apply ContDiff.continuous_deriv (n := 1) fcd (le_refl 1)
+    apply ContDiff.differentiable (n := 1) fcd (le_refl 1)
     simp
 
     unfold simple_boundary_function

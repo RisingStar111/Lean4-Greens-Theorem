@@ -173,6 +173,110 @@ open PathIntegral
 --   refine HasDerivAt.deriv ?h
 --   apply HasDerivAt.finset_prod
 
+theorem boundary_part_integrable {a b : ℝ} {f g : ℝ → ℝ} {L : ℝ × ℝ → ℝ} (R : SimpleRegion a b f g) (hct : Continuous R.f_t)
+  (f : ℝ → ℝ×ℝ)
+  (hcb : Continuous R.f_b) {hl : Continuous L} {hrb : Continuous (deriv f)}
+  {hrb2 : Differentiable ℝ f} (left right : ℝ) (hlr : left < right) (hse : Set.EqOn (simple_boundary_function R) f (Set.Ioo left right)):
+  pathIntegral_proj_fst_Integrable left right L (simple_boundary_function R) := by
+
+  have hr : Continuous (simple_boundary_function R) := by
+    apply simple_boundary_continuous R hct hcb
+  apply congr_ae_norm_continuous_pathIntegral_proj_fst_intervalIntegrable_Ioo
+  apply le_of_lt
+  apply hlr
+  exact hl
+  exact hr
+  pick_goal 3
+  use f
+  -- apply Continuous.norm
+  -- -- wait the x component of the deriv of the horiz is always 1...
+  -- -- doesn't matter cuz i can't work out how to manipulate the deriv into the product
+  -- apply Continuous.fst
+  continuity
+  apply Set.EqOn.comp_left
+  apply Set.EqOn.comp_left
+
+  -- have : ∀ x ∈ (Set.Ico R.a R.b), deriv (simple_boundary_function R) x = deriv (fun r ↦ (r, R.f_b r)) x := by
+  --   -- aesop
+  --   intro x h
+  --   refine Filter.EventuallyEq.deriv_eq ?hL
+  --   unfold simple_boundary_function
+
+
+  --   done
+
+  suffices : Set.EqOn (simple_boundary_function R) f (Set.Ioo left right)
+  ·
+    apply deriv_eqOn -- sure, need to be on open set, but this still doesn't help me actually get the range into the boundary
+    exact isOpen_Ioo
+    have hhhhh : ∀ x ∈ Set.Ioo left right, (simple_boundary_function R) x = f x:= by
+      intro x a_1
+      apply this
+      simp_all only [Set.mem_Ioo, and_self] -- aesop simplified
+
+    intro x hx
+    refine HasDerivWithinAt.congr_of_mem ?kk this hx
+    rw [<- derivWithin_of_isOpen, hasDerivWithinAt_derivWithin_iff,]
+    apply DifferentiableAt.differentiableWithinAt
+    apply Differentiable.differentiableAt
+    have ldld : (ContDiff ℝ 1 f) := by
+      rw [contDiff_one_iff_deriv]
+      apply And.intro
+      exact hrb2
+      exact hrb
+    apply ContDiff.differentiable ldld
+    exact Preorder.le_refl 1
+    exact isOpen_Ioo
+    exact hx
+
+  -- apply Set.EqOn
+  -- unfold Set.EqOn
+  -- -- rw [congrArg deriv]
+  -- -- pick_goal 3
+  -- -- use simple_boundary_function R
+  -- -- swap; rfl
+  -- intro x a_1
+  -- simp_all only [Set.mem_Ico]
+  -- obtain ⟨left, right⟩ := a_1 -- idk what all this is, aesop. probably useful to know tho, like congrArg
+  -- unfold simple_boundary_function
+  -- apply congrArg
+  -- rw [congrArg deriv] -- this eats the x dependance
+  -- apply Set.piecewise_
+
+  -- apply Filter.EventuallyEq.fun_comp
+  -- apply Filter.EventuallyEq.fun_comp
+  -- unfold simple_boundary_function
+
+
+  -- let jj : ℕ → ℝ → ℝ :=
+  --   fun x ↦ (if x = 1 then fun x ↦ x else fun x ↦ R.f_b x)
+
+  -- have : ∏ i ∈ {0,1}, jj i = fun x ↦ (x, R.f_b x) := by
+
+
+  -- apply contDiff_prod
+  -- apply contDiff_one_iff_deriv
+  -- have : deriv (fun x ↦ (R.f_b x, R.f_b x)) = fun x ↦ (deriv R.f_b x, deriv R.f_b x) := by
+  --   simp
+  -- apply deriv_comp
+
+  -- suffices MeasureTheory.IntegrableOn (fun x ↦ ‖(deriv (simple_boundary_function R) x).1‖) (Set.Ico a b) by
+  --   apply norm_continuous_pathIntegral_proj_fst_intervalIntegrable (hl := hl) (hk := hr)
+  --   unfold pathIntegral_proj_fst_Integrable
+  --   apply intervalIntegrable_iff.mpr
+  -- suffices ContinuousOn (fun x ↦ ‖(deriv (simple_boundary_function R) x).1‖) (Set.Ico a b) by
+
+  -- unfold pathIntegral_proj_fst_Integrable
+  apply hse
+  -- unfold simple_boundary_function
+  -- simp_rw [Set.eqOn_piecewise]
+  -- rw [<- min_self R.b ,<- Set.Ioo_inter_Iio (a := R.a) (b := R.b) (c := R.b), min_self]
+  -- simp_rw [Set.inter_assoc _ (Set.Iio R.b), Set.inter_compl_self (Set.Iio R.b)]
+  -- -- mostly aesop
+  -- simp_all only [differentiable_id', Set.inter_self, Set.inter_empty, Set.empty_inter, Set.eqOn_empty, Set.compl_Iio, and_self, and_true]
+  -- exact fun ⦃x⦄ ↦ congrFun rfl
+  -- that was one (and the easiest) case lmao
+
 -- don't actually need this? just the separate parts since it's constructivist in green's anyway atm, tho good isolated test (also idk if trans works backwards)
 theorem simple_boundary_path_proj_fst_Integrable (hct : Continuous R.f_t) (hcb : Continuous R.f_b) {hl : Continuous L} {hrb : Continuous (deriv fun x ↦ (x, R.f_b x))} {hrb2 : Differentiable ℝ fun x ↦ (x, R.f_b x)} : pathIntegral_proj_fst_Integrable R.a (R.b+1+R.b-R.a+1) L (simple_boundary_function R) := by
   refine pathIntegral_proj_fst_Integrable_trans (c := R.b+1+R.b-R.a) ?_ ?_
@@ -185,103 +289,53 @@ theorem simple_boundary_path_proj_fst_Integrable (hct : Continuous R.f_t) (hcb :
   -- need boundary is continuously diffable on piecewises
   -- this is actually where using paths instead of explicit funtions could be helpful
 
-  ·
-    have hr : Continuous (simple_boundary_function R) := by
-      apply simple_boundary_continuous R hct hcb
-    apply congr_ae_norm_continuous_pathIntegral_proj_fst_intervalIntegrable_Ioo
-    apply le_of_lt
-    apply R.a_lt_b
-    exact hl
-    exact hr
-    pick_goal 3
-    use fun r ↦ (r, R.f_b r)
-    -- apply Continuous.norm
-    -- -- wait the x component of the deriv of the horiz is always 1...
-    -- -- doesn't matter cuz i can't work out how to manipulate the deriv into the product
-    -- apply Continuous.fst
-    continuity
-    apply Set.EqOn.comp_left
-    apply Set.EqOn.comp_left
+  · let ff : ℝ → ℝ×ℝ := fun r ↦ (r, R.f_b r)
+    apply boundary_part_integrable R hct ff hcb R.a R.b R.a_lt_b _ (hl := hl) (hrb := hrb) (hrb2 := hrb2)
 
-    -- have : ∀ x ∈ (Set.Ico R.a R.b), deriv (simple_boundary_function R) x = deriv (fun r ↦ (r, R.f_b r)) x := by
-    --   -- aesop
-    --   intro x h
-    --   refine Filter.EventuallyEq.deriv_eq ?hL
-    --   unfold simple_boundary_function
-
-
-    --   done
-
-    suffices : Set.EqOn (simple_boundary_function R) (fun r ↦ (r, R.f_b r)) (Set.Ioo R.a R.b)
-    ·
-      apply deriv_eqOn -- sure, need to be on open set, but this still doesn't help me actually get the range into the boundary
-      exact isOpen_Ioo
-      have hhhhh : ∀ x ∈ Set.Ioo R.a R.b, (simple_boundary_function R) x = (fun r ↦ (r, R.f_b r)) x:= by
-        intro x a_1
-        apply this
-        simp_all only [Set.mem_Ioo, and_self] -- aesop simplified
-
-      intro x hx
-      refine HasDerivWithinAt.congr_of_mem ?kk this hx
-      rw [<- derivWithin_of_isOpen, hasDerivWithinAt_derivWithin_iff,]
-      apply DifferentiableAt.differentiableWithinAt
-      apply Differentiable.differentiableAt
-      have ldld : (ContDiff ℝ 1 (fun r ↦ (r, R.f_b r))) := by
-        rw [contDiff_one_iff_deriv]
-        apply And.intro
-        exact hrb2
-        exact hrb
-      apply ContDiff.differentiable ldld
-      exact Preorder.le_refl 1
-      exact isOpen_Ioo
-      exact hx
-
-    -- apply Set.EqOn
-    -- unfold Set.EqOn
-    -- -- rw [congrArg deriv]
-    -- -- pick_goal 3
-    -- -- use simple_boundary_function R
-    -- -- swap; rfl
-    -- intro x a_1
-    -- simp_all only [Set.mem_Ico]
-    -- obtain ⟨left, right⟩ := a_1 -- idk what all this is, aesop. probably useful to know tho, like congrArg
-    -- unfold simple_boundary_function
-    -- apply congrArg
-    -- rw [congrArg deriv] -- this eats the x dependance
-    -- apply Set.piecewise_
-
-    -- apply Filter.EventuallyEq.fun_comp
-    -- apply Filter.EventuallyEq.fun_comp
-    -- unfold simple_boundary_function
-
-
-    -- let jj : ℕ → ℝ → ℝ :=
-    --   fun x ↦ (if x = 1 then fun x ↦ x else fun x ↦ R.f_b x)
-
-    -- have : ∏ i ∈ {0,1}, jj i = fun x ↦ (x, R.f_b x) := by
-
-
-    -- apply contDiff_prod
-    -- apply contDiff_one_iff_deriv
-    -- have : deriv (fun x ↦ (R.f_b x, R.f_b x)) = fun x ↦ (deriv R.f_b x, deriv R.f_b x) := by
-    --   simp
-    -- apply deriv_comp
-
-    -- suffices MeasureTheory.IntegrableOn (fun x ↦ ‖(deriv (simple_boundary_function R) x).1‖) (Set.Ico a b) by
-    --   apply norm_continuous_pathIntegral_proj_fst_intervalIntegrable (hl := hl) (hk := hr)
-    --   unfold pathIntegral_proj_fst_Integrable
-    --   apply intervalIntegrable_iff.mpr
-    -- suffices ContinuousOn (fun x ↦ ‖(deriv (simple_boundary_function R) x).1‖) (Set.Ico a b) by
-
-    -- unfold pathIntegral_proj_fst_Integrable
     unfold simple_boundary_function
     simp_rw [Set.eqOn_piecewise]
-    rw [<- min_self R.b ,<- Set.Ioo_inter_Iio (a := R.a) (b := R.b) (c := R.b), min_self]
+    rw [<- min_self R.b, <- Set.Ioo_inter_Iio (a := R.a) (b := R.b) (c := R.b), min_self]
     simp_rw [Set.inter_assoc _ (Set.Iio R.b), Set.inter_compl_self (Set.Iio R.b)]
     -- mostly aesop
     simp_all only [differentiable_id', Set.inter_self, Set.inter_empty, Set.empty_inter, Set.eqOn_empty, Set.compl_Iio, and_self, and_true]
     exact fun ⦃x⦄ ↦ congrFun rfl
-    -- that was one (and the easiest) case lmao
+
+ -- todo: maybe write a custom tactic for this intersection nonsense?
+  · let ff : ℝ → ℝ×ℝ := fun r ↦ (R.b, R.f_b R.b + (r - R.b) * (R.f_t R.b - R.f_b R.b))
+    apply boundary_part_integrable R hct ff hcb R.b (R.b + 1) _ _ (hl := hl)
+    sorry
+    sorry
+    exact lt_add_one R.b
+
+    unfold simple_boundary_function
+    simp_rw [Set.eqOn_piecewise]
+    rw [<- min_self (R.b + 1), <- Set.Ioo_inter_Iio (a := R.b) (b := R.b + 1) (c := R.b + 1), min_self]
+    simp_rw [Set.inter_assoc _ (Set.Iio (R.b + 1)), Set.inter_comm (Set.Iio (R.b + 1)), Set.inter_assoc _ _ (Set.Iio (R.b + 1))ᶜ, Set.inter_compl_self (Set.Iio (R.b + 1)), Set.Iio_inter_Iio, Set.Ioo_inter_Iio]
+    simp
+    exact fun ⦃x⦄ ↦ congrFun rfl
+
+  · let ff : ℝ → ℝ×ℝ := fun r ↦ (R.b + 1 + R.b - r, R.f_t (R.b + 1 + R.b - r))
+    apply boundary_part_integrable R hct ff hcb (R.b + 1) (R.b + 1 + R.b - R.a) _ _ (hl := hl)
+    sorry
+    sorry
+    have haa : (R.b + 1) + 0 = R.b + 1 := by
+      simp
+    nth_rw 1 [<- haa]
+    rw [add_sub_assoc (R.b + 1)]
+    apply add_lt_add_left
+    rw [lt_sub_iff_add_lt]
+    simp only [zero_add]
+    exact R.a_lt_b
+
+    unfold simple_boundary_function
+    simp_rw [Set.eqOn_piecewise]
+    rw [<- min_self (R.b + 1 + R.b - R.a), <- Set.Ioo_inter_Iio (a := (R.b + 1)) (b := (R.b + 1 + R.b - R.a)) (c := (R.b + 1 + R.b - R.a)), min_self]
+    aesop
+    -- there has to be a better way to do this
+    simp_rw [Set.inter_assoc _ (Set.Iio (R.b + 1 + R.b - R.a)), Set.inter_comm (Set.Iio (R.b + 1 + R.b - R.a)), Set.inter_assoc _ _ (Set.Iio (R.b + 1 + R.b - R.a))ᶜ, Set.inter_compl_self (Set.Iio (R.b + 1 + R.b - R.a)), Set.Iio_inter_Iio, Set.Ioo_inter_Iio]
+    simp
+    exact fun ⦃x⦄ ↦ congrFun rfl
+
   repeat sorry
   done
 

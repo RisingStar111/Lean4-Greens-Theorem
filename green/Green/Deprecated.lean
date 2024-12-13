@@ -85,3 +85,42 @@ theorem pathIntegral3_equal_scale {vv : μ = MeasureTheory.volume} (c : ℝ) : �
   conv => rhs; pattern _ • _; rw [<- smul_mul_assoc]
 
   done
+
+theorem Ioo_inter_Ici_of_ge {a b c : ℝ} (h : a ≤ c): Set.Ioo a b ∩ Set.Ici c = Set.Ico c b := by
+  -- simp only [Set.inter_eq_left]
+  rw [Set.Ioo, Set.Ici, Set.Ico, Set.inter_def]
+  simp
+  simp_rw [and_comm (a := a < _), and_assoc]
+  let x : ℝ
+  sorry
+  have aaa : a < x ∧ c ≤ x → c ≤ x := by
+    simp only [and_imp, imp_self, implies_true]
+
+  apply aaa
+  aesop -- needs to be le not just lt so can't use the iff in the middle
+
+  done
+
+theorem Ioo_inter_Ici {a b c : ℝ} : Set.Ioo a b ∩ Set.Ici c ⊆ Set.Ici (max a c) := by
+  suffices : Set.Ici a ∩ Set.Ici c ⊆ Set.Ici (a ⊔ c)
+  suffices : Set.Ioi a ∩ Set.Ici c ⊆ Set.Ici (a ⊔ c)
+  simp_rw [Set.Ioo, Set.Ici]
+  simp
+  refine Set.subset_setOf.mpr ?this.a
+  intro x a_1
+  simp_all only [Set.Ici_inter_Ici, subset_refl, Set.mem_inter_iff, Set.mem_setOf_eq, and_true]
+  obtain ⟨left, right⟩ := a_1
+  apply le_of_lt
+  exact left.left
+
+  simp_rw [Set.Ioi, Set.Ici]
+  simp
+  refine Set.subset_setOf.mpr ?this.b
+  intro x a_1
+  simp_all only [Set.Ici_inter_Ici, subset_refl, Set.mem_inter_iff, Set.mem_setOf_eq, and_true]
+  obtain ⟨left, right⟩ := a_1
+  apply le_of_lt
+  exact left
+
+  simp only [Set.Ici_inter_Ici, subset_refl]
+  done -- yikes

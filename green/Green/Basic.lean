@@ -121,6 +121,18 @@ theorem pathIntegral_proj_fst_Integrable_trans {c : ℝ} (hac : pathIntegral_pro
   apply IntervalIntegrable.trans hac hcb
   done
 
+theorem pathIntegral_proj_fst_Integrable_on_union_left (c : ℝ) (hac : a ≤ c) (hcb : c ≤ b) (hi : pathIntegral_proj_fst_Integrable a b L k μ) : pathIntegral_proj_fst_Integrable a c L k μ := by
+  unfold pathIntegral_proj_fst_Integrable at *
+  rw [intervalIntegrable_iff_integrableOn_Ioc_of_le] at *
+  rw [<- Set.Ioc_union_Ioc_eq_Ioc (b := c)] at hi
+  apply MeasureTheory.IntegrableOn.left_of_union at hi
+  exact hi
+  exact hac
+  exact hcb
+  exact Preorder.le_trans a c b hac hcb
+  exact hac
+  done
+
 theorem pathIntegral_proj_fst_split_at (c : ℝ) {hac : pathIntegral_proj_fst_Integrable a c L k μ} {hcb : pathIntegral_proj_fst_Integrable c b L k μ} : pathIntegral_proj_fst a c L k μ + pathIntegral_proj_fst c b L k μ = pathIntegral_proj_fst a b L k μ := by
   unfold pathIntegral_proj_fst
   apply intervalIntegral.integral_add_adjacent_intervals
@@ -487,10 +499,10 @@ variable {k : ℝ → ℝ×ℝ}
 -- other option is to cast the path parametrisation but idk how that works with deriv - actually doesn't work because that's sent to the function as well
 -- basically need to give the deriv some indication of what it's wrt ~~sneaky physicists~~
 -- the projected norm not being continuous at the corners causes issues as to split the parts have to be integrable, but atm can only split one at a time meaning the rest has to be integrable in whole
-theorem green_split_alpha (s_1 s_2 s_3 : ℝ) (hi0 : pathIntegral_proj_fst_Integrable 0 s_1 L k) (hi1 : pathIntegral_proj_fst_Integrable s_1 s_2 L k) (hi2 : pathIntegral_proj_fst_Integrable s_2 s_3 L k) (hi3 : pathIntegral_proj_fst_Integrable s_3 1 L k) (hs01 : pathIntegral_proj_fst 0 s_1 L k = ∫ x in a..b, L (x,f x)) (hs12 : pathIntegral_proj_fst s_1 s_2 L k = 0) (hs23 : pathIntegral_proj_fst s_2 s_3 L k = ∫ x in b..a, L (x,g x)) (hs30 : pathIntegral_proj_fst s_3 1 L k = 0) : pathIntegral_proj_fst 0 1 L k = (∫ x in a..b, L (x,f x)) - ∫ x in a..b, L (x,g x) := by
-  have hi20 : pathIntegral_proj_fst_Integrable s_2 1 L k := by
+theorem green_split_alpha (s_1 s_2 s_3 s_4: ℝ) (hi0 : pathIntegral_proj_fst_Integrable 0 s_1 L k) (hi1 : pathIntegral_proj_fst_Integrable s_1 s_2 L k) (hi2 : pathIntegral_proj_fst_Integrable s_2 s_3 L k) (hi3 : pathIntegral_proj_fst_Integrable s_3 s_4 L k) (hs01 : pathIntegral_proj_fst 0 s_1 L k = ∫ x in a..b, L (x,f x)) (hs12 : pathIntegral_proj_fst s_1 s_2 L k = 0) (hs23 : pathIntegral_proj_fst s_2 s_3 L k = ∫ x in b..a, L (x,g x)) (hs30 : pathIntegral_proj_fst s_3 s_4 L k = 0) : pathIntegral_proj_fst 0 s_4 L k = (∫ x in a..b, L (x,f x)) - ∫ x in a..b, L (x,g x) := by
+  have hi20 : pathIntegral_proj_fst_Integrable s_2 s_4 L k := by
     apply pathIntegral_proj_fst_Integrable_trans hi2 hi3
-  have hi10 : pathIntegral_proj_fst_Integrable s_1 1 L k := by
+  have hi10 : pathIntegral_proj_fst_Integrable s_1 s_4 L k := by
     apply pathIntegral_proj_fst_Integrable_trans hi1 hi20
   rw [<- pathIntegral_proj_fst_split_at s_1]
   nth_rw 2 [<- pathIntegral_proj_fst_split_at s_2]
@@ -501,12 +513,12 @@ theorem green_split_alpha (s_1 s_2 s_3 : ℝ) (hi0 : pathIntegral_proj_fst_Integ
   rfl
   done
 
-theorem green_split {R : Region.SimpleRegion a b f g } {hL : Continuous L} : pathIntegral_proj_fst 0 1 L k = (∫ x in a..b, L (x,f x)) - ∫ x in a..b, L (x,g x) := by
+theorem green_split {R : Region.SimpleRegion a b f g } {hL : Continuous L} : pathIntegral_proj_fst 0 (R.b + 1 + R.b - R.a + 1) L k = (∫ x in a..b, L (x,f x)) - ∫ x in a..b, L (x,g x) := by
   have hbi : pathIntegral_proj_fst_Integrable R.a (R.b+1+R.b-R.a+1) L (Region.simple_boundary_function R) := by
     apply Region.simple_boundary_path_proj_fst_Integrable
     exact hL
   apply pathIntegral_proj_fst_Integrable_translate_zero at hbi
-
+  apply green_split_alpha R.b (R.b + 1) (R.b + 1 + R.b - R.a) (R.b + 1 + R.b - R.a + 1)
   done
 
 theorem rhs_sub (hlcd : ∀x, Continuous (deriv fun w ↦ L (x, w))) (hlc : Continuous L) (hfc : Continuous f) (hgc : Continuous g) (hdf : ∀x, Differentiable ℝ (fun w ↦ L (x,w))) : ∫ x in a..b, (∫ y in (g x)..(f x), (-(deriv (fun w ↦ L (x,w)))) y) = (∫ x in a..b, L (x,g x)) - ∫ x in a..b, L (x,f x) := by

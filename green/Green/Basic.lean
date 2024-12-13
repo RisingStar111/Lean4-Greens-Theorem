@@ -340,6 +340,15 @@ theorem Ioo_inter_Ici {a b c : ℝ} : Set.Ioo a b ∩ Set.Ici c ⊆ Set.Ici (max
   simp only [Set.Ici_inter_Ici, subset_refl]
   done -- yikes
 
+theorem Ioo_inter_Ici_of_lt {a b c : ℝ} (h : c < a): Set.Ioo a b ∩ Set.Ici c = Set.Ioo a b := by
+  simp only [Set.inter_eq_left]
+  rw [Set.Ioo, Set.Ici]
+  simp_all only [Set.setOf_subset_setOf, and_imp]
+  intro a_1 a_2 a_3
+  apply le_of_lt
+  apply lt_trans h a_2
+  done
+
 -- don't actually need this? just the separate parts since it's constructivist in green's anyway atm, tho good isolated test (also idk if trans works backwards)
 theorem simple_boundary_path_proj_fst_Integrable {hl : Continuous L} : pathIntegral_proj_fst_Integrable R.a (R.b+1+R.b-R.a+1) L (simple_boundary_function R) := by
 
@@ -460,7 +469,7 @@ theorem simple_boundary_path_proj_fst_Integrable {hl : Continuous L} : pathInteg
     -- simp
 
     simp_rw [Set.compl_Iio]
-    rw [Set.Ioo_inter_Ioi]
+    rw [Ioo_inter_Ici]
 
     rw [<- min_self (R.b + 1 + R.b - R.a + 1), <- Set.Ioo_inter_Iio (a := (R.b + 1 + R.b - R.a)) (b := (R.b + 1 + R.b - R.a + 1)) (c := (R.b + 1 + R.b - R.a + 1))]
     -- there has to be a better way to do this

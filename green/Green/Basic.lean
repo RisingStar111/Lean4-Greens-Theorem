@@ -340,13 +340,28 @@ theorem Ioo_inter_Ici {a b c : ℝ} : Set.Ioo a b ∩ Set.Ici c ⊆ Set.Ici (max
   simp only [Set.Ici_inter_Ici, subset_refl]
   done -- yikes
 
-theorem Ioo_inter_Ici_of_lt {a b c : ℝ} (h : c < a): Set.Ioo a b ∩ Set.Ici c = Set.Ioo a b := by
+theorem Ioo_inter_Ici_of_le {a b c : ℝ} (h : c ≤ a): Set.Ioo a b ∩ Set.Ici c = Set.Ioo a b := by
   simp only [Set.inter_eq_left]
   rw [Set.Ioo, Set.Ici]
   simp_all only [Set.setOf_subset_setOf, and_imp]
   intro a_1 a_2 a_3
   apply le_of_lt
-  apply lt_trans h a_2
+  exact lt_of_le_of_lt h a_2
+  done
+
+theorem Ioo_inter_Ici_of_ge {a b c : ℝ} (h : a ≤ c): Set.Ioo a b ∩ Set.Ici c = Set.Ico c b := by
+  -- simp only [Set.inter_eq_left]
+  rw [Set.Ioo, Set.Ici, Set.Ico, Set.inter_def]
+  simp
+  simp_rw [and_comm (a := a < _), and_assoc]
+  let x : ℝ
+  sorry
+  have aaa : a < x ∧ c ≤ x → c ≤ x := by
+    simp only [and_imp, imp_self, implies_true]
+
+  apply aaa
+  aesop -- needs to be le not just lt so can't use the iff in the middle
+
   done
 
 -- don't actually need this? just the separate parts since it's constructivist in green's anyway atm, tho good isolated test (also idk if trans works backwards)
@@ -358,7 +373,22 @@ theorem simple_boundary_path_proj_fst_Integrable {hl : Continuous L} : pathInteg
   have hcb : Continuous R.f_b := by
     apply ContDiff.continuous R.b_contDiff
 
-
+  have h1 : R.b + 1 + R.b - R.a ≤ R.b + 1 + R.b - R.a := by
+      rfl
+  have h2 : R.b + 1 ≤ R.b + 1 + R.b - R.a := by
+    rw [add_sub_assoc]
+    apply le_add_of_le_of_nonneg
+    rfl
+    apply le_of_lt
+    rw [sub_pos]
+    exact R.a_lt_b
+  have h3 : R.b ≤ R.b + 1 + R.b - R.a := by
+    rw [add_sub_assoc]
+    apply le_add_of_le_of_nonneg
+    simp only [le_add_iff_nonneg_right, zero_le_one]
+    apply le_of_lt
+    rw [sub_pos]
+    exact R.a_lt_b
 
   refine pathIntegral_proj_fst_Integrable_trans (c := R.b+1+R.b-R.a) ?_ ?_
   refine pathIntegral_proj_fst_Integrable_trans (c := R.b+1) ?_ ?_
@@ -437,6 +467,16 @@ theorem simple_boundary_path_proj_fst_Integrable {hl : Continuous L} : pathInteg
     simp only [zero_add]
     exact R.a_lt_b
 
+    -- unfold simple_boundary_function
+    -- simp_rw [Set.eqOn_piecewise]
+    -- simp_rw [Set.compl_Iio]
+    -- rw [Ioo_inter_Ici_of_le]
+    -- rw [Ioo_inter_Ici_of_le]
+    -- nth_rw 1 [Ioo_inter_Ici_of_gt h22]
+    -- -- rw [Ioo_inter_Ici_of_le]
+    -- simp_rw [Set.Ioo_inter_Iio, Set.eqOn_refl]
+    -- aesop
+
     unfold simple_boundary_function
     simp_rw [Set.eqOn_piecewise]
     rw [<- min_self (R.b + 1 + R.b - R.a), <- Set.Ioo_inter_Iio (a := (R.b + 1)) (b := (R.b + 1 + R.b - R.a)) (c := (R.b + 1 + R.b - R.a)), min_self]
@@ -468,68 +508,80 @@ theorem simple_boundary_path_proj_fst_Integrable {hl : Continuous L} : pathInteg
     -- simp_rw [Set.Ioo, Set.compl_Iio, Set.Iio, Set.Ici, Set.inter_def]
     -- simp
 
+
+
     simp_rw [Set.compl_Iio]
-    rw [Ioo_inter_Ici]
+    rw [Ioo_inter_Ici_of_le h3]
+    rw [Ioo_inter_Ici_of_le h2]
+    rw [Ioo_inter_Ici_of_le h1]
+    simp_rw [Set.Ioo_inter_Iio, Set.eqOn_refl]
+    aesop -- ok this is actually better at least to look at
+    -- sorry
+    -- all_goals have hhh : R.b + 1 + (R.b - R.a) ≤ R.b + 1 + R.b - R.a := by
+    --   {rw [<- add_sub_assoc]}
 
-    rw [<- min_self (R.b + 1 + R.b - R.a + 1), <- Set.Ioo_inter_Iio (a := (R.b + 1 + R.b - R.a)) (b := (R.b + 1 + R.b - R.a + 1)) (c := (R.b + 1 + R.b - R.a + 1))]
-    -- there has to be a better way to do this
-    -- simp_rw [Set.inter_assoc, Set.inter_comm (Set.Iio (R.b + 1 + R.b - R.a + 1)), Set.inter_assoc, Set.inter_comm, Set.inter_compl_self (Set.Iio (R.b + 1 + R.b - R.a + 1)), Set.Iio_inter_Iio, Set.inter_assoc, Set.Iio_inter_Ioo]
-    simp_rw [Set.Ioo_inter_Iio]
-    simp_rw [Set.inter_assoc]
-    repeat simp_rw [Set.inter_comm _ (Set.Iio _), <- Set.inter_assoc]
-    simp
-    aesop
-    have : (R.b + 1 + R.b - R.a + 1) ⊓ R.b = R.b := by
-      simp
-      simp_rw [add_sub_assoc, add_assoc]
-      simp
-      nth_rw 2 [add_comm]
-      simp_rw [<- add_assoc, <- add_sub_assoc]
-      simp
-      simp_rw [add_comm]
-      apply le_add_of_le_of_nonneg
-      apply le_of_lt
-      exact R.a_lt_b
-      simp
-    rw [this]
-    rw [Set.Ioo_eq_empty_of_le]
-    simp
-    have : R.b ≤ R.b + 1 + R.b - R.a := by
-      apply le_of_lt
-      simp_rw [add_sub_assoc, add_assoc]
-      simp
-      simp_rw [<- add_sub_assoc]
-      simp
-      simp_rw [add_comm]
-      apply lt_add_of_lt_of_nonneg
-      exact R.a_lt_b
-      simp
-    exact this
+    -- simp
+    -- apply add_le_ -- nvm ig it doesn't want to add a number. this also hadn't even dealt with the main stuff yet
 
-    rw [Set.Iio_inter_Ioo]
-    have : (R.b + 1) ⊓ (R.b + 1 + R.b - R.a + 1) = R.b + 1 := by
-      simp
-      apply le_of_lt
-      simp_rw [add_sub_assoc, add_assoc]
-      simp
-      simp_rw [<- add_sub_assoc]
-      simp
-      simp_rw [add_comm]
-      apply lt_add_of_lt_of_nonneg
-      exact R.a_lt_b
-      simp
-    rw [this]
-    rw [Set.Ioo_eq_empty_of_le]
-    simp
-    apply le_of_lt
-    rw [add_sub_assoc]
-    simp
-    exact R.a_lt_b
+    -- rw [<- min_self (R.b + 1 + R.b - R.a + 1), <- Set.Ioo_inter_Iio (a := (R.b + 1 + R.b - R.a)) (b := (R.b + 1 + R.b - R.a + 1)) (c := (R.b + 1 + R.b - R.a + 1))]
+    -- -- there has to be a better way to do this
+    -- -- simp_rw [Set.inter_assoc, Set.inter_comm (Set.Iio (R.b + 1 + R.b - R.a + 1)), Set.inter_assoc, Set.inter_comm, Set.inter_compl_self (Set.Iio (R.b + 1 + R.b - R.a + 1)), Set.Iio_inter_Iio, Set.inter_assoc, Set.Iio_inter_Ioo]
+    -- simp_rw [Set.Ioo_inter_Iio]
+    -- simp_rw [Set.inter_assoc]
+    -- repeat simp_rw [Set.inter_comm _ (Set.Iio _), <- Set.inter_assoc]
+    -- simp
+    -- aesop
+    -- have : (R.b + 1 + R.b - R.a + 1) ⊓ R.b = R.b := by
+    --   simp
+    --   simp_rw [add_sub_assoc, add_assoc]
+    --   simp
+    --   nth_rw 2 [add_comm]
+    --   simp_rw [<- add_assoc, <- add_sub_assoc]
+    --   simp
+    --   simp_rw [add_comm]
+    --   apply le_add_of_le_of_nonneg
+    --   apply le_of_lt
+    --   exact R.a_lt_b
+    --   simp
+    -- rw [this]
+    -- rw [Set.Ioo_eq_empty_of_le]
+    -- simp
+    -- have : R.b ≤ R.b + 1 + R.b - R.a := by
+    --   apply le_of_lt
+    --   simp_rw [add_sub_assoc, add_assoc]
+    --   simp
+    --   simp_rw [<- add_sub_assoc]
+    --   simp
+    --   simp_rw [add_comm]
+    --   apply lt_add_of_lt_of_nonneg
+    --   exact R.a_lt_b
+    --   simp
+    -- exact this
 
-    rw [Set.Iio_inter_Ioo]
-    simp
+    -- rw [Set.Iio_inter_Ioo]
+    -- have : (R.b + 1) ⊓ (R.b + 1 + R.b - R.a + 1) = R.b + 1 := by
+    --   simp
+    --   apply le_of_lt
+    --   simp_rw [add_sub_assoc, add_assoc]
+    --   simp
+    --   simp_rw [<- add_sub_assoc]
+    --   simp
+    --   simp_rw [add_comm]
+    --   apply lt_add_of_lt_of_nonneg
+    --   exact R.a_lt_b
+    --   simp
+    -- rw [this]
+    -- rw [Set.Ioo_eq_empty_of_le]
+    -- simp
+    -- apply le_of_lt
+    -- rw [add_sub_assoc]
+    -- simp
+    -- exact R.a_lt_b
 
-    exact fun ⦃x⦄ ↦ congrFun rfl
+    -- rw [Set.Iio_inter_Ioo]
+    -- simp
+
+    -- exact fun ⦃x⦄ ↦ congrFun rfl
 
   done
 

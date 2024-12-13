@@ -364,6 +364,19 @@ theorem Ioo_inter_Ici_of_ge {a b c : ℝ} (h : a ≤ c): Set.Ioo a b ∩ Set.Ici
 
   done
 
+theorem contDiff_const_add (f : ℝ → ℝ) (c : ℝ) (hf : ContDiff ℝ 1 f) :
+  ContDiff ℝ 1 (fun x ↦ c + f x) := ContDiff.add contDiff_const hf
+theorem contDiff_add_const (f : ℝ → ℝ) (c : ℝ) (hf : ContDiff ℝ 1 f) :
+  ContDiff ℝ 1 (fun x ↦ f x + c) := ContDiff.add hf contDiff_const
+
+theorem contDiff_const_mul (f : ℝ → ℝ) (c : ℝ) (hf : ContDiff ℝ 1 f) :
+  ContDiff ℝ 1 (fun x ↦ f x * c) := ContDiff.mul hf contDiff_const
+
+theorem contDiff_const_sub (f : ℝ → ℝ) (c : ℝ) (hf : ContDiff ℝ 1 f) :
+  ContDiff ℝ 1 (fun x ↦ c - f x) := ContDiff.sub contDiff_const hf
+theorem contDiff_sub_const (f : ℝ → ℝ) (c : ℝ) (hf : ContDiff ℝ 1 f) :
+  ContDiff ℝ 1 (fun x ↦ f x - c) := ContDiff.sub hf contDiff_const
+
 -- don't actually need this? just the separate parts since it's constructivist in green's anyway atm, tho good isolated test (also idk if trans works backwards)
 theorem simple_boundary_path_proj_fst_Integrable {hl : Continuous L} : pathIntegral_proj_fst_Integrable R.a (R.b+1+R.b-R.a+1) L (simple_boundary_function R) := by
 
@@ -420,16 +433,21 @@ theorem simple_boundary_path_proj_fst_Integrable {hl : Continuous L} : pathInteg
  -- todo: maybe write a custom tactic for this intersection nonsense?
   · let ff : ℝ → ℝ×ℝ := fun r ↦ (R.b, R.f_b R.b + (r - R.b) * (R.f_t R.b - R.f_b R.b))
     have fcd : ContDiff ℝ 1 ff := by
-      -- simp_all [contDiff_id, ContDiff.prod, contDiff_const, ContDiff.add, ContDiff.mul] -- no work
       apply ContDiff.prod
       exact contDiff_const
-      apply ContDiff.add
-      exact contDiff_const
-      apply ContDiff.mul
-      apply ContDiff.sub
+      repeat first|apply contDiff_const_sub|apply contDiff_sub_const|apply contDiff_const_add|apply contDiff_const_mul
       exact contDiff_id
-      exact contDiff_const
-      exact contDiff_const --ja what is this
+
+      -- simp_all [contDiff_id, ContDiff.prod, contDiff_const, ContDiff.add, ContDiff.mul] -- no work
+      -- apply ContDiff.prod
+      -- exact contDiff_const
+      -- apply ContDiff.add
+      -- exact contDiff_const
+      -- apply ContDiff.mul
+      -- apply ContDiff.sub
+      -- exact contDiff_id
+      -- exact contDiff_const
+      -- exact contDiff_const --ja what is this
 
     apply boundary_part_integrable R hct ff hcb R.b (R.b + 1) _ _ (hl := hl)
     apply ContDiff.continuous_deriv (n := 1) fcd (le_refl 1)
@@ -489,13 +507,44 @@ theorem simple_boundary_path_proj_fst_Integrable {hl : Continuous L} : pathInteg
     have fcd : ContDiff ℝ 1 ff := by
       apply ContDiff.prod
       exact contDiff_const
-      apply ContDiff.sub
-      exact contDiff_const
-      apply ContDiff.mul
-      apply ContDiff.sub
+      repeat first|apply contDiff_const_sub|apply contDiff_sub_const|apply contDiff_const_add|apply contDiff_const_mul
       exact contDiff_id
-      exact contDiff_const
-      exact contDiff_const
+
+      -- apply ContDiff.prod <|> apply ContDiff.add <|> apply contDiff_const_sub <|> apply ContDiff.mul;
+      -- try { exact contDiff_const <|> exact contDiff_id }
+
+      -- simp only [contDiff_const_add, contDiff_const_sub, contDiff_const_mul, contDiff_const, contDiff_id]
+      -- first|apply contDiff_const_sub|apply ContDiff.mul|skip
+      -- repeat{first|exact contDiff_const|exact contDiff_id}
+      -- repeat {
+      --   apply contDiff_const_sub
+      --   -- try apply contDiff_sub_const
+      --   -- apply contDiff_const_mul
+      -- }
+      -- repeat {
+      --   repeat{first|apply contDiff_const_sub|apply contDiff_sub_const|apply contDiff_const_mul}
+      --   -- apply contDiff_sub_const
+      --   repeat{first|exact contDiff_const|exact contDiff_id}
+      -- }
+      -- first|apply contDiff_const_sub|apply contDiff_sub_const|apply ContDiff.mul
+      -- apply contDiff_const_mul
+      -- apply contDiff_sub_const
+      -- first|apply ContDiff.sub|apply ContDiff.mul|skip
+      -- try simp only [contDiff_const, contDiff_id]
+      -- first|apply ContDiff.sub|apply ContDiff.mul|skip
+      -- try simp only [contDiff_const, contDiff_id]
+      -- first|apply ContDiff.sub|apply ContDiff.mul|skip
+      -- repeat {first|exact contDiff_const|exact contDiff_id}
+      -- simp only [contDiff_const, ContDiff.sub]
+
+      -- exact contDiff_const
+      -- apply ContDiff.sub
+      -- exact contDiff_const
+      -- apply ContDiff.mul
+      -- apply ContDiff.sub
+      -- exact contDiff_id
+      -- exact contDiff_const
+      -- exact contDiff_const
 
     apply boundary_part_integrable R hct ff hcb (R.b + 1 + R.b - R.a) (R.b + 1 + R.b - R.a + 1) _ _ (hl := hl)
     apply ContDiff.continuous_deriv (n := 1) fcd (le_refl 1)

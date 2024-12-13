@@ -316,6 +316,30 @@ theorem boundary_part_integrable {a b : ℝ} {f g : ℝ → ℝ} {L : ℝ × ℝ
   -- exact fun ⦃x⦄ ↦ congrFun rfl
   -- that was one (and the easiest) case lmao
 
+theorem Ioo_inter_Ici {a b c : ℝ} : Set.Ioo a b ∩ Set.Ici c ⊆ Set.Ici (max a c) := by
+  suffices : Set.Ici a ∩ Set.Ici c ⊆ Set.Ici (a ⊔ c)
+  suffices : Set.Ioi a ∩ Set.Ici c ⊆ Set.Ici (a ⊔ c)
+  simp_rw [Set.Ioo, Set.Ici]
+  simp
+  refine Set.subset_setOf.mpr ?this.a
+  intro x a_1
+  simp_all only [Set.Ici_inter_Ici, subset_refl, Set.mem_inter_iff, Set.mem_setOf_eq, and_true]
+  obtain ⟨left, right⟩ := a_1
+  apply le_of_lt
+  exact left.left
+
+  simp_rw [Set.Ioi, Set.Ici]
+  simp
+  refine Set.subset_setOf.mpr ?this.b
+  intro x a_1
+  simp_all only [Set.Ici_inter_Ici, subset_refl, Set.mem_inter_iff, Set.mem_setOf_eq, and_true]
+  obtain ⟨left, right⟩ := a_1
+  apply le_of_lt
+  exact left
+
+  simp only [Set.Ici_inter_Ici, subset_refl]
+  done -- yikes
+
 -- don't actually need this? just the separate parts since it's constructivist in green's anyway atm, tho good isolated test (also idk if trans works backwards)
 theorem simple_boundary_path_proj_fst_Integrable {hl : Continuous L} : pathIntegral_proj_fst_Integrable R.a (R.b+1+R.b-R.a+1) L (simple_boundary_function R) := by
 
@@ -431,6 +455,13 @@ theorem simple_boundary_path_proj_fst_Integrable {hl : Continuous L} : pathInteg
 
     unfold simple_boundary_function
     simp_rw [Set.eqOn_piecewise]
+
+    -- simp_rw [Set.Ioo, Set.compl_Iio, Set.Iio, Set.Ici, Set.inter_def]
+    -- simp
+
+    simp_rw [Set.compl_Iio]
+    rw [Set.Ioo_inter_Ioi]
+
     rw [<- min_self (R.b + 1 + R.b - R.a + 1), <- Set.Ioo_inter_Iio (a := (R.b + 1 + R.b - R.a)) (b := (R.b + 1 + R.b - R.a + 1)) (c := (R.b + 1 + R.b - R.a + 1))]
     -- there has to be a better way to do this
     -- simp_rw [Set.inter_assoc, Set.inter_comm (Set.Iio (R.b + 1 + R.b - R.a + 1)), Set.inter_assoc, Set.inter_comm, Set.inter_compl_self (Set.Iio (R.b + 1 + R.b - R.a + 1)), Set.Iio_inter_Iio, Set.inter_assoc, Set.Iio_inter_Ioo]
@@ -566,6 +597,18 @@ theorem green_split {R : Region.SimpleRegion a b f g } {hL : Continuous L} : pat
     simp
     exact R.a_lt_b
   exact hbi
+  · sorry
+  · unfold pathIntegral_proj_fst
+    unfold intervalIntegral
+    simp
+    unfold Region.simple_boundary_function
+    suffices : ∀ x, (deriv (fun r ↦ (R.b, R.f_b R.b + (r - R.b) * (R.f_t R.b - R.f_b R.b))) x).1 = 0
+    · sorry
+    · intro x
+      -- nah i basically have to work out how to take projection into the deriv
+      -- maybe i actually just have to define that that's how deriv works in this case?
+  · sorry
+  · sorry
   done
 
 theorem rhs_sub (hlcd : ∀x, Continuous (deriv fun w ↦ L (x, w))) (hlc : Continuous L) (hfc : Continuous f) (hgc : Continuous g) (hdf : ∀x, Differentiable ℝ (fun w ↦ L (x,w))) : ∫ x in a..b, (∫ y in (g x)..(f x), (-(deriv (fun w ↦ L (x,w)))) y) = (∫ x in a..b, L (x,g x)) - ∫ x in a..b, L (x,f x) := by

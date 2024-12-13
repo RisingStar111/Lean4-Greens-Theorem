@@ -121,16 +121,27 @@ theorem pathIntegral_proj_fst_Integrable_trans {c : ℝ} (hac : pathIntegral_pro
   apply IntervalIntegrable.trans hac hcb
   done
 
-theorem pathIntegral_proj_fst_Integrable_on_union_left (c : ℝ) (hac : a ≤ c) (hcb : c ≤ b) (hi : pathIntegral_proj_fst_Integrable a b L k μ) : pathIntegral_proj_fst_Integrable a c L k μ := by
+theorem pathIntegral_proj_fst_Integrable_on_union_reverse (c : ℝ) (hac : a ≤ c) (hcb : c ≤ b) (hi : pathIntegral_proj_fst_Integrable a b L k μ) : pathIntegral_proj_fst_Integrable a c L k μ ∧ pathIntegral_proj_fst_Integrable c b L k μ := by
   unfold pathIntegral_proj_fst_Integrable at *
   rw [intervalIntegrable_iff_integrableOn_Ioc_of_le] at *
-  rw [<- Set.Ioc_union_Ioc_eq_Ioc (b := c)] at hi
-  apply MeasureTheory.IntegrableOn.left_of_union at hi
+  rw [intervalIntegrable_iff_integrableOn_Ioc_of_le] -- ? why is this needed twice (neither simp_rw nor occs work)
+  rw [<- Set.Ioc_union_Ioc_eq_Ioc (b := c), MeasureTheory.integrableOn_union] at hi
   exact hi
   exact hac
   exact hcb
+  exact hcb
   exact Preorder.le_trans a c b hac hcb
   exact hac
+  done
+
+theorem pathIntegral_proj_fst_Integrable_on_union_left_reverse (c : ℝ) (hac : a ≤ c) (hcb : c ≤ b) (hi : pathIntegral_proj_fst_Integrable a b L k μ) : pathIntegral_proj_fst_Integrable a c L k μ := by
+  apply pathIntegral_proj_fst_Integrable_on_union_reverse c hac hcb at hi
+  simp_all -- aesop moment? idk but also i couldn't work it out manually
+  done
+
+theorem pathIntegral_proj_fst_Integrable_on_union_right_reverse (c : ℝ) (hac : a ≤ c) (hcb : c ≤ b) (hi : pathIntegral_proj_fst_Integrable a b L k μ) : pathIntegral_proj_fst_Integrable c b L k μ := by
+  apply pathIntegral_proj_fst_Integrable_on_union_reverse c hac hcb at hi
+  simp_all -- same ofc
   done
 
 theorem pathIntegral_proj_fst_split_at (c : ℝ) {hac : pathIntegral_proj_fst_Integrable a c L k μ} {hcb : pathIntegral_proj_fst_Integrable c b L k μ} : pathIntegral_proj_fst a c L k μ + pathIntegral_proj_fst c b L k μ = pathIntegral_proj_fst a b L k μ := by
@@ -499,26 +510,62 @@ variable {k : ℝ → ℝ×ℝ}
 -- other option is to cast the path parametrisation but idk how that works with deriv - actually doesn't work because that's sent to the function as well
 -- basically need to give the deriv some indication of what it's wrt ~~sneaky physicists~~
 -- the projected norm not being continuous at the corners causes issues as to split the parts have to be integrable, but atm can only split one at a time meaning the rest has to be integrable in whole
-theorem green_split_alpha (s_1 s_2 s_3 s_4: ℝ) (hi0 : pathIntegral_proj_fst_Integrable 0 s_1 L k) (hi1 : pathIntegral_proj_fst_Integrable s_1 s_2 L k) (hi2 : pathIntegral_proj_fst_Integrable s_2 s_3 L k) (hi3 : pathIntegral_proj_fst_Integrable s_3 s_4 L k) (hs01 : pathIntegral_proj_fst 0 s_1 L k = ∫ x in a..b, L (x,f x)) (hs12 : pathIntegral_proj_fst s_1 s_2 L k = 0) (hs23 : pathIntegral_proj_fst s_2 s_3 L k = ∫ x in b..a, L (x,g x)) (hs30 : pathIntegral_proj_fst s_3 s_4 L k = 0) : pathIntegral_proj_fst 0 s_4 L k = (∫ x in a..b, L (x,f x)) - ∫ x in a..b, L (x,g x) := by
-  have hi20 : pathIntegral_proj_fst_Integrable s_2 s_4 L k := by
-    apply pathIntegral_proj_fst_Integrable_trans hi2 hi3
-  have hi10 : pathIntegral_proj_fst_Integrable s_1 s_4 L k := by
-    apply pathIntegral_proj_fst_Integrable_trans hi1 hi20
+theorem green_split_alpha (s_0 s_1 s_2 s_3 s_4: ℝ) (hi : pathIntegral_proj_fst_Integrable s_0 s_4 L k) (hle01 : s_0 ≤ s_1) (hle12 : s_1 ≤ s_2) (hle23 : s_2 ≤ s_3) (hle34 : s_3 ≤ s_4) (hs01 : pathIntegral_proj_fst s_0 s_1 L k = ∫ x in a..b, L (x,f x)) (hs12 : pathIntegral_proj_fst s_1 s_2 L k = 0) (hs23 : pathIntegral_proj_fst s_2 s_3 L k = ∫ x in b..a, L (x,g x)) (hs30 : pathIntegral_proj_fst s_3 s_4 L k = 0) : pathIntegral_proj_fst s_0 s_4 L k = (∫ x in a..b, L (x,f x)) - ∫ x in a..b, L (x,g x) := by
+  have hil : pathIntegral_proj_fst_Integrable s_0 s_2 L k := by
+    apply pathIntegral_proj_fst_Integrable_on_union_left_reverse s_2 at hi
+    exact hi
+    exact Preorder.le_trans s_0 s_1 s_2 hle01 hle12
+    exact Preorder.le_trans s_2 s_3 s_4 hle23 hle34
+
+  have hir : pathIntegral_proj_fst_Integrable s_2 s_4 L k := by
+    apply pathIntegral_proj_fst_Integrable_on_union_right_reverse s_2 at hi
+    exact hi
+    exact Preorder.le_trans s_0 s_1 s_2 hle01 hle12
+    exact Preorder.le_trans s_2 s_3 s_4 hle23 hle34
+
   rw [<- pathIntegral_proj_fst_split_at s_1]
   nth_rw 2 [<- pathIntegral_proj_fst_split_at s_2]
   nth_rw 3 [<- pathIntegral_proj_fst_split_at s_3]
-  all_goals first|assumption|skip
   rw [hs01, hs12, hs23, hs30, intervalIntegral.integral_symm a b]
   simp
   rfl
+  · apply pathIntegral_proj_fst_Integrable_on_union_left_reverse s_3 at hir
+    exact hir
+    exact hle23
+    exact hle34
+  · apply pathIntegral_proj_fst_Integrable_on_union_right_reverse s_3 at hir
+    exact hir
+    exact hle23
+    exact hle34
+  · apply pathIntegral_proj_fst_Integrable_on_union_right_reverse s_1 at hil
+    exact hil
+    exact hle01
+    exact hle12
+  exact hir
+  · apply pathIntegral_proj_fst_Integrable_on_union_left_reverse s_1 at hil
+    exact hil
+    exact hle01
+    exact hle12
+  · apply pathIntegral_proj_fst_Integrable_trans _ hir
+    apply pathIntegral_proj_fst_Integrable_on_union_right_reverse s_1 at hil
+    exact hil
+    exact hle01
+    exact hle12
   done
 
-theorem green_split {R : Region.SimpleRegion a b f g } {hL : Continuous L} : pathIntegral_proj_fst 0 (R.b + 1 + R.b - R.a + 1) L k = (∫ x in a..b, L (x,f x)) - ∫ x in a..b, L (x,g x) := by
+theorem green_split {R : Region.SimpleRegion a b f g } {hL : Continuous L} : pathIntegral_proj_fst R.a (R.b + 1 + R.b - R.a + 1) L (Region.simple_boundary_function R) = (∫ x in a..b, L (x,f x)) - ∫ x in a..b, L (x,g x) := by
   have hbi : pathIntegral_proj_fst_Integrable R.a (R.b+1+R.b-R.a+1) L (Region.simple_boundary_function R) := by
     apply Region.simple_boundary_path_proj_fst_Integrable
     exact hL
-  apply pathIntegral_proj_fst_Integrable_translate_zero at hbi
-  apply green_split_alpha R.b (R.b + 1) (R.b + 1 + R.b - R.a) (R.b + 1 + R.b - R.a + 1)
+  -- apply pathIntegral_proj_fst_Integrable_translate_zero at hbi
+  apply green_split_alpha R.a R.b (R.b + 1) (R.b + 1 + R.b - R.a) (R.b + 1 + R.b - R.a + 1)
+  all_goals first|simp [R.a_lt_b, le_of_lt]|skip
+  swap
+  · apply le_of_lt
+    simp_rw [add_sub_assoc, add_assoc]
+    simp
+    exact R.a_lt_b
+  exact hbi
   done
 
 theorem rhs_sub (hlcd : ∀x, Continuous (deriv fun w ↦ L (x, w))) (hlc : Continuous L) (hfc : Continuous f) (hgc : Continuous g) (hdf : ∀x, Differentiable ℝ (fun w ↦ L (x,w))) : ∫ x in a..b, (∫ y in (g x)..(f x), (-(deriv (fun w ↦ L (x,w)))) y) = (∫ x in a..b, L (x,g x)) - ∫ x in a..b, L (x,f x) := by

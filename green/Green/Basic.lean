@@ -97,6 +97,20 @@ theorem pathIntegral_proj_fst_split_at (c : ℝ) {hac : pathIntegral_proj_fst_In
   repeat assumption
   done
 
+-- not quite what's needed as it can only split once but should be easier to start from
+theorem pathIntegral_proj_fst_split_at_restrict (c : ℝ) {hac : pathIntegral_proj_fst_Integrable a c L k μ} {hcb : pathIntegral_proj_fst_Integrable c b L k μ} : pathIntegral_proj_fst a c L (fun x ↦ if x < c then k x else 0) μ + pathIntegral_proj_fst c b L (fun x ↦ if c ≤ a then k x else 0) μ = pathIntegral_proj_fst a b L k μ := by
+  nth_rw 3 [<- pathIntegral_proj_fst_split_at c]
+  split
+  next h =>
+    simp_all only [add_left_inj]
+    sorry
+  next h =>
+    simp_all only [not_le]
+    sorry
+  exact hac
+  exact hcb
+  done
+
 end PathIntegral
 
 structure Region (a b : ℝ) (f g : ℝ → ℝ) where
@@ -351,6 +365,10 @@ variable {a b : ℝ} {f g : ℝ → ℝ}
 variable {L : ℝ×ℝ → ℝ}
 variable {k : ℝ → ℝ×ℝ}
 
+theorem deriv_vec (k : ℝ → ℝ×ℝ) (x : ℝ) : deriv k x = (deriv (fun x ↦ (k x).1) x, deriv (fun x ↦ (k x).2) x) := by
+  sorry -- unforch
+  done
+
 theorem green_split_alpha (s_0 s_1 s_2 s_3 s_4: ℝ) (hi : pathIntegral_proj_fst_Integrable s_0 s_4 L k) (hle01 : s_0 ≤ s_1) (hle12 : s_1 ≤ s_2) (hle23 : s_2 ≤ s_3) (hle34 : s_3 ≤ s_4) (hs01 : pathIntegral_proj_fst s_0 s_1 L k = ∫ x in a..b, L (x,f x)) (hs12 : pathIntegral_proj_fst s_1 s_2 L k = 0) (hs23 : pathIntegral_proj_fst s_2 s_3 L k = ∫ x in b..a, L (x,g x)) (hs30 : pathIntegral_proj_fst s_3 s_4 L k = 0) : pathIntegral_proj_fst s_0 s_4 L k = (∫ x in a..b, L (x,f x)) - ∫ x in a..b, L (x,g x) := by
   have hil : pathIntegral_proj_fst_Integrable s_0 s_2 L k := by
     apply pathIntegral_proj_fst_Integrable_on_union_left_reverse s_2 at hi
@@ -413,10 +431,17 @@ theorem green_split {R : Region.SimpleRegion a b f g } {hL : Continuous L} : pat
     simp
     unfold Region.simple_boundary_function
     suffices : ∀ x, (deriv (fun r ↦ (R.b, R.f_b R.b + (r - R.b) * (R.f_t R.b - R.f_b R.b))) x).1 = 0
-    · sorry
+    · --apply MeasureTheory.integral_piecewise
+      simp_rw [deriv_vec]
+      sorry -- this is also rather an issue huh
+      -- regardless of what i do i'm pretty sure i need to be able to use the bounds of the integral to simplify the function but idk how
+      -- maybe a better option is to drag the condition on x into the function when the integral is split - ofc i still need to work out how to do it but then it's just working on a general function
     · intro x
       -- nah i basically have to work out how to take projection into the deriv
       -- maybe i actually just have to define that that's how deriv works in this case?
+      rw [deriv_vec]
+      simp only [deriv_const']
+
   · sorry
   · sorry
   done

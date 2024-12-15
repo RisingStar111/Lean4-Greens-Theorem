@@ -97,16 +97,63 @@ theorem pathIntegral_proj_fst_split_at (c : ℝ) {hac : pathIntegral_proj_fst_In
   repeat assumption
   done
 
+-- a third potential option
+theorem zip_piecewise {s : Set ℝ} [(j : ℝ) → Decidable (j ∈ s)] {q r : ℝ → ℝ}: s.piecewise f g * s.piecewise q r = s.piecewise (f * q) (g * r) := by
+  exact Eq.symm (Set.piecewise_mul s f q g r)
+theorem zip_piecewise_deriv {s : Set ℝ} [(j : ℝ) → Decidable (j ∈ s)]: s.piecewise f g * s.piecewise (deriv f) (deriv g) = s.piecewise (f * (deriv f)) (g * (deriv g)) := by
+  exact zip_piecewise
+theorem deriv_piecewise {s : Set ℝ} [(j : ℝ) → Decidable (j ∈ s)] : deriv (s.piecewise f g) = s.piecewise (deriv f) (deriv g) := by
+   -- t'would be great but i suppose it's not technically true due to the derivitive not being defined at the crossing
+  -- since i'm only using it in an integral i can make do with ae equal if that helps
+  -- apply integral_piecewise -- right looking at this -- who could have guessed, quite helpful -- new technique unlocked
+  -- rw [<- Set.indicator_add_compl_eq_piecewise]
+  -- -- rw [deriv_add] -- i hate deriv ngl
+  funext x
+  -- have : s.indicator f + sᶜ.indicator g = fun x ↦ (s.indicator f x + sᶜ.indicator g x) := by
+  --   rfl
+  -- rw [this, deriv_add] -- tbh no wonder i didn't work it out before
+  -- revert x
+  -- rw [<- funext_iff]
+  -- nvm this isn't helpful cuz the derivative of an indicator obviously doesn't exist and i still can't get the indicator out
+  -- unfold Set.indicator
+  -- have : HasDerivWithinAt (s.piecewise f g) (derivWithin f s x) s x := by
+  --   apply HasFDerivWithinAt.congr' (f := f)
+  --   simp only [hasDerivWithinAt_derivWithin_iff]
+  --   sorry
+  --   exact fun x a ↦ Set.piecewise_eq_of_mem s f g a
+  --   exact?
+
+theorem zip_piecewise_in_deriv {s : Set ℝ} [(j : ℝ) → Decidable (j ∈ s)]: s.piecewise f g * deriv (s.piecewise f g) = s.piecewise (f * (deriv f)) (g * (deriv g)) := by
+  apply
+
+theorem asdasd {hab : a ≤ b} : ∫ x in a..b, ((Set.Ico a b).piecewise f g) x =  ∫ x in a..b, f x:= by
+  unfold intervalIntegral
+  aesop
+  apply Measure.restrict_apply
+  conv => lhs; congr; rfl; rw [Set.piecewise_eq_of_mem]
+
+-- a different potential option
+theorem bounds_inside_intervalIntegral {hab : a ≤ b} {hac : IntervalIntegrable f μ a b} : ∫ x in a..b, (fun x ↦ if x ∈ (Set.Ioc a b) then f x else 0) x ∂μ = ∫ x in a..b, f x ∂μ := by
+  unfold intervalIntegral
+  simp_all only [Set.mem_Ioc, not_lt, Set.Ioc_eq_empty, Measure.restrict_empty, integral_zero_measure, sub_zero]
+  simp_rw [integral_def]
+  have cr : CompleteSpace ℝ := by
+    exact Real.instCompleteSpace
+  rw [intervalIntegrable_iff_integrableOn_Ioc_of_le] at hac
+  unfold IntegrableOn at hac
+  simp [cr, hac, ↓reduceDIte]
+  apply integral_piecewise
+  sorry
+  done
 -- not quite what's needed as it can only split once but should be easier to start from
-theorem pathIntegral_proj_fst_split_at_restrict (c : ℝ) {hac : pathIntegral_proj_fst_Integrable a c L k μ} {hcb : pathIntegral_proj_fst_Integrable c b L k μ} : pathIntegral_proj_fst a c L (fun x ↦ if x < c then k x else 0) μ + pathIntegral_proj_fst c b L (fun x ↦ if c ≤ a then k x else 0) μ = pathIntegral_proj_fst a b L k μ := by
+theorem pathIntegral_proj_fst_split_at_restrict (c : ℝ) {hac : pathIntegral_proj_fst_Integrable a c L k μ} {hcb : pathIntegral_proj_fst_Integrable c b L k μ} : pathIntegral_proj_fst a c L (fun x ↦ if x < c then k x else 0) μ + pathIntegral_proj_fst c b L (fun x ↦ if c ≤ x then k x else 0) μ = pathIntegral_proj_fst a b L k μ := by
   nth_rw 3 [<- pathIntegral_proj_fst_split_at c]
-  split
-  next h =>
-    simp_all only [add_left_inj]
-    sorry
-  next h =>
-    simp_all only [not_le]
-    sorry
+  · unfold pathIntegral_proj_fst
+    unfold intervalIntegral
+    simp_rw [integral_def] -- ...
+    have cr : CompleteSpace ℝ := by
+      exact Real.instCompleteSpace
+    simp [cr, ↓reduceDIte]
   exact hac
   exact hcb
   done
@@ -432,6 +479,7 @@ theorem green_split {R : Region.SimpleRegion a b f g } {hL : Continuous L} : pat
     unfold Region.simple_boundary_function
     suffices : ∀ x, (deriv (fun r ↦ (R.b, R.f_b R.b + (r - R.b) * (R.f_t R.b - R.f_b R.b))) x).1 = 0
     · --apply MeasureTheory.integral_piecewise
+      -- simp_rw [Set.piecewise_eq_of_mem (Set.Iio R.b) (fun r ↦ (r, R.f_b r))]
       simp_rw [deriv_vec]
       sorry -- this is also rather an issue huh
       -- regardless of what i do i'm pretty sure i need to be able to use the bounds of the integral to simplify the function but idk how

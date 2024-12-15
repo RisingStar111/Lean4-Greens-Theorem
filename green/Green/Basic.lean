@@ -102,13 +102,13 @@ theorem zip_piecewise {s : Set ℝ} [(j : ℝ) → Decidable (j ∈ s)] {q r : �
   exact Eq.symm (Set.piecewise_mul s f q g r)
 theorem zip_piecewise_deriv {s : Set ℝ} [(j : ℝ) → Decidable (j ∈ s)]: s.piecewise f g * s.piecewise (deriv f) (deriv g) = s.piecewise (f * (deriv f)) (g * (deriv g)) := by
   exact zip_piecewise
-theorem deriv_piecewise {s : Set ℝ} [(j : ℝ) → Decidable (j ∈ s)] : deriv (s.piecewise f g) = s.piecewise (deriv f) (deriv g) := by
+theorem deriv_piecewise_Ioo : ∀ᵐ x, deriv ((Set.Ioo a b).piecewise f g) x = (Set.Ioo a b).piecewise (deriv f) (deriv g) x := by
    -- t'would be great but i suppose it's not technically true due to the derivitive not being defined at the crossing
   -- since i'm only using it in an integral i can make do with ae equal if that helps
   -- apply integral_piecewise -- right looking at this -- who could have guessed, quite helpful -- new technique unlocked
   -- rw [<- Set.indicator_add_compl_eq_piecewise]
   -- -- rw [deriv_add] -- i hate deriv ngl
-  funext x
+  -- funext x
   -- have : s.indicator f + sᶜ.indicator g = fun x ↦ (s.indicator f x + sᶜ.indicator g x) := by
   --   rfl
   -- rw [this, deriv_add] -- tbh no wonder i didn't work it out before
@@ -122,6 +122,72 @@ theorem deriv_piecewise {s : Set ℝ} [(j : ℝ) → Decidable (j ∈ s)] : deri
   --   sorry
   --   exact fun x a ↦ Set.piecewise_eq_of_mem s f g a
   --   exact?
+
+  -- by_cases hx : x ∈ (Set.Ioo a b) -- this also seems like a useful tactic
+  apply ae_of_ae_restrict_of_ae_restrict_compl (Set.Ioo a b) <;> rw [ae_restrict_iff']
+  swap; exact measurableSet_Ioo
+  pick_goal 3; exact MeasurableSet.compl measurableSet_Ioo
+  apply ae_of_all
+  -- should probably read other lean code more but i'm rather stubborn and don't like reading other stuff until i've done it myself
+
+  · intro x hx
+    simp_all only [Set.piecewise_eq_of_mem]
+    -- but as expected it doesn't matter because deriv sucks
+    have : derivWithin ((Set.Ioo a b).piecewise f g) (Set.Ioo a b) x = deriv ((Set.Ioo a b).piecewise f g) x := by
+      apply derivWithin_of_mem_nhds
+      apply mem_interior_iff_mem_nhds.mp
+      simp_all only [Set.mem_Ioo, interior_Ioo, and_self]
+    rw [<- this]
+    -- rw [derivWithin_fderivWithin]
+    -- rw [fderivWithin_congr' (f := f)] -- ?
+    rw [derivWithin_congr (f := f)]
+    have : derivWithin f (Set.Ioo a b) x = deriv f x := by
+      apply derivWithin_of_mem_nhds
+      apply mem_interior_iff_mem_nhds.mp
+      simp_all only [Set.mem_Ioo, interior_Ioo, and_self]
+    exact this
+    exact Set.piecewise_eqOn (Set.Ioo a b) f g
+    exact Set.piecewise_eq_of_mem (Set.Ioo a b) f g hx
+
+  have : (∀ᵐ (x : ℝ), x ∈ (Set.Ioo a b)ᶜ) → ∀ᵐ (x : ℝ), x ∈ (Set.Icc a b)ᶜ := by
+    intro a_1
+    simp_all only [Set.mem_compl_iff, Set.mem_Ioo, not_and, not_lt, Set.mem_Icc, not_le]
+    by_cases ax : ∀ x, a < x
+    simp_all only [forall_const]
+    have : ∀ (x : ℝ), a ≤ x := by
+      intro x
+      apply le_of_lt
+      exact ax x
+    simp_all only [forall_const]
+    obtain w := ax
+    apply ae_of_ae_restrict_of_ae_restrict_compl {x | b < x}
+    rw [ae_restrict_iff]
+    simp_all only [Set.mem_setOf_eq, implies_true, Filter.eventually_true]
+    suffices adad : {x | b < x} = (Set.Ioi b)
+    simp_all only [measurableSet_Ioi]
+    rw [Set.Ioi]
+
+
+
+
+
+  intro x hx
+  simp_all only [Set.mem_compl_iff, Set.mem_Ioo, not_and, not_lt, implies_true, Set.piecewise_eq_of_not_mem]
+
+  have : derivWithin ((Set.Ioo a b)ᶜ.piecewise f g) (Set.Ioo a b)ᶜ x = deriv ((Set.Ioo a b)ᶜ.piecewise f g) x := by
+    apply derivWithin_of_mem_nhds
+    apply mem_interior_iff_mem_nhds.mp
+    simp
+    -- ye thought this might be an issue (the fact my statement is simply false)
+  rw [<- this]
+  rw [derivWithin_congr (f := f)]
+  have : derivWithin f (Set.Ioo a b)ᶜ x = deriv f x := by
+    apply derivWithin_of_mem_nhds
+    apply mem_interior_iff_mem_nhds.mp
+    simp_all only [Set.mem_Ioo, interior_Ioo, and_self]
+  exact this
+  exact Set.piecewise_eqOn (Set.Ioo a b) f g
+  exact Set.piecewise_eq_of_mem (Set.Ioo a b) f g hx
 
 theorem zip_piecewise_in_deriv {s : Set ℝ} [(j : ℝ) → Decidable (j ∈ s)]: s.piecewise f g * deriv (s.piecewise f g) = s.piecewise (f * (deriv f)) (g * (deriv g)) := by
   apply

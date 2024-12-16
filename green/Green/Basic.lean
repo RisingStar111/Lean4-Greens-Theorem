@@ -102,6 +102,133 @@ theorem zip_piecewise {s : Set ℝ} [(j : ℝ) → Decidable (j ∈ s)] {q r : �
   exact Eq.symm (Set.piecewise_mul s f q g r)
 theorem zip_piecewise_deriv {s : Set ℝ} [(j : ℝ) → Decidable (j ∈ s)]: s.piecewise f g * s.piecewise (deriv f) (deriv g) = s.piecewise (f * (deriv f)) (g * (deriv g)) := by
   exact zip_piecewise
+theorem deriv_piecewise_Ioo_of_lt [NoAtoms μ] (hab : a < b) : deriv ((Set.Ioo a b).piecewise f g) =ᵐ[μ] (Set.Ioo a b).piecewise (deriv f) (deriv g) := by
+  apply Filter.eventuallyEq_iff_exists_mem.mpr
+  use (Set.Ioo a b) ∪ (Set.Iio a) ∪ (Set.Ioi b)
+  simp_all only [Set.eqOn_union]
+  apply And.intro
+  · rw [mem_ae_iff]
+    have : (Set.Ioo a b ∪ Set.Iio a ∪ Set.Ioi b)ᶜ = {x | x = a ∨ x = b} := by
+      simp only [Set.compl_union, Set.compl_Iio, Set.compl_Ioi]
+      rw [Set.inter_assoc]
+      rw [Set.Ici_inter_Iic]
+      rw [Set.Ioo, Set.Icc]
+      rw [Set.compl_def]
+      simp only [Set.mem_setOf_eq, not_lt]
+      have adddee : ∀ x, ¬(a < x ∧ x < b) ↔ (a < x ↔ ¬(x < b)) := by
+        intro x
+        simp_all only [not_and, not_lt]
+        apply Iff.intro
+        · intro a_1
+          apply Iff.intro
+          · intro a_2
+            simp_all only [forall_const]
+          · intro a_2
+            simp_all only [implies_true]
+            apply lt_of_lt_of_le hab a_2
+        · intro a_1 a_2
+          simp_all only [true_iff]
+
+      simp_rw [adddee]
+      rw [Set.inter_def]
+      simp
+      apply Set.ext
+      intro x
+      by_cases aaaaa: a < x
+      aesop
+      apply Or.intro_right
+      apply eq_of_le_of_le right left
+      apply le_of_lt hab
+
+      simp
+      rw [not_lt] at aaaaa
+
+      aesop
+      apply Or.intro_left
+      apply eq_of_le_of_le aaaaa left_1
+      apply le_of_lt hab
+      apply le_of_lt hab
+
+    rw [this]
+    suffices : {x | x = a ∨ x = b} = {a, b}
+    rw [this]
+    apply Set.Finite.measure_zero
+    exact Set.toFinite {a, b}
+    simp_all only [Set.compl_union, Set.compl_Iio, Set.compl_Ioi]
+    rfl
+
+  aesop
+  intro x a_1
+  have : derivWithin ((Set.Ioo a b).piecewise f g) (Set.Ioo a b) x = deriv ((Set.Ioo a b).piecewise f g) x := by
+    apply derivWithin_of_mem_nhds
+    apply mem_interior_iff_mem_nhds.mp
+    simp_all only [Set.mem_Ioo, interior_Ioo, and_self]
+  rw [<- this]
+  rw [derivWithin_congr (f := f)]
+  simp_all only [Set.piecewise_eq_of_mem]
+  have : derivWithin f (Set.Ioo a b) x = deriv f x := by
+    apply derivWithin_of_mem_nhds
+    apply mem_interior_iff_mem_nhds.mp
+    simp_all only [Set.mem_Ioo, interior_Ioo, and_self]
+  exact this
+  exact Set.piecewise_eqOn (Set.Ioo a b) f g
+  exact Set.piecewise_eq_of_mem (Set.Ioo a b) f g a_1
+
+  intro x a_1
+  have : derivWithin ((Set.Ioo a b).piecewise f g) (Set.Iio a) x = deriv ((Set.Ioo a b).piecewise f g) x := by
+    apply derivWithin_of_mem_nhds
+    apply mem_interior_iff_mem_nhds.mp
+    simp_all only [Set.mem_Iio, interior_Iio]
+  rw [<- this]
+  have fofo : x ∈ (Set.Ioo a b)ᶜ := by
+    aesop
+    apply lt_trans a_1 at a_2
+    rw [lt_self_iff_false] at a_2
+    exact False.elim a_2
+  rw [derivWithin_congr (f := g)]
+  have asi : (Set.Ioo a b).piecewise (deriv f) (deriv g) x = deriv g x := by
+    rw [<- Set.piecewise_compl]
+    simp_all only [Set.mem_Iio, Set.mem_compl_iff, Set.mem_Ioo, not_and, not_lt, implies_true, Set.piecewise_eq_of_mem]
+  rw [asi]
+  have : derivWithin g (Set.Iio a) x = deriv g x := by
+    apply derivWithin_of_mem_nhds
+    apply mem_interior_iff_mem_nhds.mp
+    simp_all only [Set.mem_Iio, interior_Iio]
+  exact this
+  rw [Set.eqOn_piecewise]
+  aesop
+  rw [Set.Iio_inter_Ioo]
+  aesop
+  apply Set.eqOn_refl
+  exact Set.piecewise_eq_of_not_mem (Set.Ioo a b) f g fofo
+
+  intro x a_1
+  have : derivWithin ((Set.Ioo a b).piecewise f g) (Set.Ioi b) x = deriv ((Set.Ioo a b).piecewise f g) x := by
+    apply derivWithin_of_mem_nhds
+    apply mem_interior_iff_mem_nhds.mp
+    simp_all only [Set.mem_Ioi, interior_Ioi]
+  rw [<- this]
+  have fofo : x ∈ (Set.Ioo a b)ᶜ := by
+    aesop
+    apply le_of_lt
+    exact a_1
+  rw [derivWithin_congr (f := g)]
+  have asi : (Set.Ioo a b).piecewise (deriv f) (deriv g) x = deriv g x := by
+    rw [<- Set.piecewise_compl]
+    simp_all only [Set.mem_Iio, Set.mem_compl_iff, Set.mem_Ioo, not_and, not_lt, implies_true, Set.piecewise_eq_of_mem]
+  rw [asi]
+  have : derivWithin g (Set.Ioi b) x = deriv g x := by
+    apply derivWithin_of_mem_nhds
+    apply mem_interior_iff_mem_nhds.mp
+    simp_all only [Set.mem_Ioi, interior_Ioi]
+  exact this
+  rw [Set.eqOn_piecewise]
+  aesop
+  rw [Set.Ioi_inter_Ioo]
+  aesop
+  apply Set.eqOn_refl
+  exact Set.piecewise_eq_of_not_mem (Set.Ioo a b) f g fofo
+
 theorem deriv_piecewise_Ioo : ∀ᵐ x, deriv ((Set.Ioo a b).piecewise f g) x = (Set.Ioo a b).piecewise (deriv f) (deriv g) x := by
    -- t'would be great but i suppose it's not technically true due to the derivitive not being defined at the crossing
   -- since i'm only using it in an integral i can make do with ae equal if that helps
@@ -122,7 +249,7 @@ theorem deriv_piecewise_Ioo : ∀ᵐ x, deriv ((Set.Ioo a b).piecewise f g) x = 
   --   sorry
   --   exact fun x a ↦ Set.piecewise_eq_of_mem s f g a
   --   exact?
-
+  apply Filter.EventuallyEq.add
   -- by_cases hx : x ∈ (Set.Ioo a b) -- this also seems like a useful tactic
   apply ae_of_ae_restrict_of_ae_restrict_compl (Set.Ioo a b) <;> rw [ae_restrict_iff']
   swap; exact measurableSet_Ioo
@@ -149,26 +276,53 @@ theorem deriv_piecewise_Ioo : ∀ᵐ x, deriv ((Set.Ioo a b).piecewise f g) x = 
     exact Set.piecewise_eqOn (Set.Ioo a b) f g
     exact Set.piecewise_eq_of_mem (Set.Ioo a b) f g hx
 
-  have : (∀ᵐ (x : ℝ), x ∈ (Set.Ioo a b)ᶜ) → ∀ᵐ (x : ℝ), x ∈ (Set.Icc a b)ᶜ := by
-    intro a_1
-    simp_all only [Set.mem_compl_iff, Set.mem_Ioo, not_and, not_lt, Set.mem_Icc, not_le]
-    by_cases ax : ∀ x, a < x
-    simp_all only [forall_const]
-    have : ∀ (x : ℝ), a ≤ x := by
-      intro x
-      apply le_of_lt
-      exact ax x
-    simp_all only [forall_const]
-    obtain w := ax
-    apply ae_of_ae_restrict_of_ae_restrict_compl {x | b < x}
-    rw [ae_restrict_iff]
-    simp_all only [Set.mem_setOf_eq, implies_true, Filter.eventually_true]
-    suffices adad : {x | b < x} = (Set.Ioi b)
-    simp_all only [measurableSet_Ioi]
-    rw [Set.Ioi]
+  -- have : (∀ᵐ (x : ℝ), x ∈ (Set.Icc a b)ᶜ) → ∀ᵐ (x : ℝ), x ∈ (Set.Ioo a b)ᶜ := by
+  --   intro a_1
+  --   have asdadds : (∀ (x : ℝ), x ∈ (Set.Icc a b)ᶜ) → ∀ᵐ (x : ℝ), x ∈ (Set.Icc a b)ᶜ := by
+  --     aesop
+  --   apply MeasureTheory.ae_of
+  --   simp_all only [Set.mem_compl_iff, Set.mem_Ioo, not_and, not_lt, Set.mem_Icc, not_le]
+  --   by_cases ax : ∀ x, a < x
+  --   simp_all only [forall_const]
+  --   have : ∀ (x : ℝ), a ≤ x := by
+  --     intro x
+  --     apply le_of_lt
+  --     exact ax x
+  --   simp_all only [forall_const]
+  --   obtain w := ax
+  --   apply ae_of_ae_restrict_of_ae_restrict_compl {x | b < x}
+  --   rw [ae_restrict_iff]
+  --   simp_all only [Set.mem_setOf_eq, implies_true, Filter.eventually_true]
+  --   suffices adad : {x | b < x} = (Set.Ioi b)
+  --   simp_all only [measurableSet_Ioi]
+  --   rw [Set.Ioi]
 
 
+  -- suffices : ∀ (x : ℝ), x ∈ (Set.Icc a b)ᶜ → deriv ((Set.Ioo a b).piecewise f g) x = (Set.Ioo a b).piecewise (deriv f) (deriv g) x
+  -- · apply ae_of_all
+  --   intro x a_2
+  --   simp_all only [Set.mem_compl_iff, Set.mem_Icc, not_and, not_le, Set.mem_Ioo, not_lt, implies_true,
+  --     Set.piecewise_eq_of_not_mem]
+  --   have addds : x ∈ (Set.Ioo a b)ᶜ := by
+  --     aesop
+  --   -- intro x hx
+  --   -- simp_all only [Set.mem_compl_iff, Set.mem_Ioo, not_and, not_lt, implies_true, Set.piecewise_eq_of_not_mem]
+  --   -- but as expected it doesn't matter because deriv sucks
+  --   have : derivWithin ((Set.Ioo a b).piecewise f g) (Set.Ioo a b)ᶜ x = deriv ((Set.Ioo a b).piecewise f g) x := by
+  --     apply derivWithin_of_mem_nhds
+  --     apply mem_interior_iff_mem_nhds.mp
 
+  --     simp
+
+  --   rw [<- this]
+  --   rw [derivWithin_congr (f := f)]
+  --   have : derivWithin f (Set.Ioo a b)ᶜ x = deriv f x := by
+  --     apply derivWithin_of_mem_nhds
+  --     apply mem_interior_iff_mem_nhds.mp
+  --     simp_all only [Set.mem_Ioo, interior_Ioo, and_self]
+  --   exact this
+  --   exact Set.piecewise_eqOn (Set.Ioo a b) f g
+  --   exact Set.piecewise_eq_of_mem (Set.Ioo a b) f g hx
 
 
   intro x hx

@@ -355,34 +355,23 @@ theorem green_split_alpha (s_0 s_1 s_2 s_3 s_4: ℝ) (hi : pathIntegral_proj_fst
     exact Preorder.le_trans s_0 s_1 s_2 hle01 hle12
     exact Preorder.le_trans s_2 s_3 s_4 hle23 hle34
 
+  have hirl := hir
+  have hirr := hir
+  have hill := hil
+  have hilr := hil
+  apply pathIntegral_proj_fst_Integrable_on_union_left_reverse s_3 at hirl
+  apply pathIntegral_proj_fst_Integrable_on_union_left_reverse s_1 at hill
+  apply pathIntegral_proj_fst_Integrable_on_union_right_reverse s_3 at hirr
+  apply pathIntegral_proj_fst_Integrable_on_union_right_reverse s_1 at hilr
+  have hispan := pathIntegral_proj_fst_Integrable_trans hilr hir
+
   rw [<- pathIntegral_proj_fst_split_at s_1]
   nth_rw 2 [<- pathIntegral_proj_fst_split_at s_2]
   nth_rw 3 [<- pathIntegral_proj_fst_split_at s_3]
   rw [hs01, hs12, hs23, hs30, intervalIntegral.integral_symm a b]
   simp
   rfl
-  · apply pathIntegral_proj_fst_Integrable_on_union_left_reverse s_3 at hir
-    exact hir
-    exact hle23
-    exact hle34
-  · apply pathIntegral_proj_fst_Integrable_on_union_right_reverse s_3 at hir
-    exact hir
-    exact hle23
-    exact hle34
-  · apply pathIntegral_proj_fst_Integrable_on_union_right_reverse s_1 at hil
-    exact hil
-    exact hle01
-    exact hle12
-  exact hir
-  · apply pathIntegral_proj_fst_Integrable_on_union_left_reverse s_1 at hil
-    exact hil
-    exact hle01
-    exact hle12
-  · apply pathIntegral_proj_fst_Integrable_trans _ hir
-    apply pathIntegral_proj_fst_Integrable_on_union_right_reverse s_1 at hil
-    exact hil
-    exact hle01
-    exact hle12
+  all_goals assumption
   done
 
 theorem green_split {R : Region.SimpleRegion a b f g } {hL : Continuous L} (a_eq_Ra : a = R.a) (b_eq_Rb : b = R.b) (f_eq_Rf : f = R.f_t) (g_eq_Rg : g = R.f_b) : pathIntegral_proj_fst R.a (R.b + 1 + R.b - R.a + 1) L (Region.simple_boundary_function R) = (∫ x in a..b, L (x,g x)) - ∫ x in a..b, L (x,f x) := by

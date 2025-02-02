@@ -399,10 +399,6 @@ theorem deriv_vec (k : ℝ → ℝ×ℝ) (x : ℝ) : deriv k x = (deriv (fun x �
   sorry -- unforch
   done
 
-theorem mul_eq_mul_left_iff_inl {a b c : ℝ} (hbc : b = c) : a * b = a * c ↔ b = c := by
-  rw [mul_eq_mul_left_iff, or_iff_left_of_imp]
-  simp only [hbc, implies_true]
-
 theorem green_split_alpha (s_0 s_1 s_2 s_3 s_4: ℝ) (hi : pathIntegral_proj_fst_Integrable s_0 s_4 L k) (hle01 : s_0 ≤ s_1) (hle12 : s_1 ≤ s_2) (hle23 : s_2 ≤ s_3) (hle34 : s_3 ≤ s_4) (hs01 : pathIntegral_proj_fst s_0 s_1 L k = ∫ x in a..b, L (x,g x)) (hs12 : pathIntegral_proj_fst s_1 s_2 L k = 0) (hs23 : pathIntegral_proj_fst s_2 s_3 L k = ∫ x in b..a, L (x,f x)) (hs30 : pathIntegral_proj_fst s_3 s_4 L k = 0) : pathIntegral_proj_fst s_0 s_4 L k = (∫ x in a..b, L (x,g x)) - ∫ x in a..b, L (x,f x) := by
   have hil : pathIntegral_proj_fst_Integrable s_0 s_2 L k := by
     apply pathIntegral_proj_fst_Integrable_on_union_left_reverse s_2 at hi
@@ -461,18 +457,8 @@ theorem green_split {R : Region.SimpleRegion a b f g } {hL : Continuous L} (a_eq
       unfold Region.simple_boundary_function
       simp_rw [Set.apply_piecewise _ _ _ (fun r ↦ L)]
       conv => congr; intro x x_1 x_2; rw [Set.piecewise_eq_of_mem]; rfl; exact x_2; rfl
-      -- rw [mul_eq_mul_left_iff_inl (a := L _)]
-      -- conv => congr; intro x x_1 x_2; rw [mul_eq_mul_left_iff_inl]; rfl;
-      -- simp_rw [mul_eq_mul_left_iff]
-      -- so then, the last* piece of the puzzle - getting 'for almost all' into 'almost everywhere equal' while keeping the condition on x
-      -- * the other being however one could deal with deriv_vec
-      -- rw [Filter.eventually_imp_distrib_left]
-      -- apply Filter.eventually_or_distrib_right
       simp_rw [<- and_imp, <- Set.mem_Ioc]
       apply MeasureTheory.ae_imp_of_ae_restrict
-      -- have (q : ℝ→Prop) : (∀ᶠ (x : ℝ) in MeasureTheory.ae (MeasureTheory.volume.restrict (Set.Ioc R.a R.b)), q x) → (∀ᵐ (x : ℝ) ∂MeasureTheory.volume.restrict (Set.Ioc R.a R.b), q x) := by
-      --   simp only [measurableSet_Ioc, MeasureTheory.ae_restrict_eq, imp_self]
-      -- apply this
       rw [Filter.Eventually]
       have (x : ℝ) (f g : ℝ → ℝ) : f =ᵐ[MeasureTheory.volume.restrict (Set.Ioc R.a R.b)] g → {x | f x = g x} ∈ MeasureTheory.ae (MeasureTheory.volume.restrict (Set.Ioc R.a R.b)) := by
         intro a_1

@@ -146,6 +146,10 @@ theorem Ioo_inter_Ici_of_le {a b c : ℝ} (h : c ≤ a): Set.Ioo a b ∩ Set.Ici
   exact lt_of_le_of_lt h a_2
   done
 
+theorem mul_eq_mul_left_iff_inl {a b c : ℝ} (hbc : b = c) : a * b = a * c ↔ b = c := by
+  rw [mul_eq_mul_left_iff, or_iff_left_of_imp]
+  simp only [hbc, implies_true]
+
 theorem deriv_piecewise_Ioo_of_lt [NoAtoms μ] (hab : a < b) : deriv ((Set.Ioo a b).piecewise f g) =ᵐ[μ] (Set.Ioo a b).piecewise (deriv f) (deriv g) := by
   apply Filter.eventuallyEq_iff_exists_mem.mpr
   use (Set.Ioo a b) ∪ (Set.Iio a) ∪ (Set.Ioi b)

@@ -81,6 +81,63 @@ theorem pathIntegral_proj_fst_split_at (c : ℝ) {hac : pathIntegral_proj_fst_In
   repeat assumption
   done
 
+theorem deriv_piecewise_Iic_of_lt [NoAtoms μ] (f g : ℝ → ℝ×ℝ): deriv ((Set.Iic a).piecewise f g) =ᵐ[μ] (Set.Iic a).piecewise (deriv f) (deriv g) := by
+  apply Filter.eventuallyEq_iff_exists_mem.mpr
+  use (Set.Iio a) ∪ (Set.Ioi a)
+  simp_all only [Set.eqOn_union]
+  apply And.intro
+  · simp [mem_ae_iff]
+  apply And.intro
+
+  intro x a_1
+  have : derivWithin ((Set.Iic a).piecewise f g) (Set.Iio a) x = deriv ((Set.Iic a).piecewise f g) x := by
+    apply derivWithin_of_mem_nhds
+    exact Iio_mem_nhds a_1
+  rw [<- this]
+  rw [derivWithin_congr (f := f)]
+  rw [Set.piecewise_eq_of_mem]
+  have : derivWithin f (Set.Iio a) x = deriv f x := by
+    apply derivWithin_of_mem_nhds
+    exact Iio_mem_nhds a_1
+  exact this
+  exact Set.mem_Iic_of_Iio a_1
+  have (q p : ℝ → ℝ×ℝ) : Set.EqOn q p (Set.Iic a ∪ Set.Iio a) → Set.EqOn q p (Set.Iio a) := by
+    simp only [Set.eqOn_union, and_imp, imp_self, implies_true]
+  apply this
+  have : (Set.Iic a) = (Set.Iic a ∪ Set.Iio a) := by
+    rw [eq_comm]
+    rw [Set.union_eq_left]
+    exact Set.Iio_subset_Iic_self
+  rw [<- this]
+  exact Set.piecewise_eqOn (Set.Iic a) f g
+  have (x : ℝ) :  x ∈ Set.Iio a → x ∈ Set.Iic a := by
+    simp
+    intro a_1
+    apply le_of_lt
+    exact a_1
+  apply this at a_1
+  exact Set.piecewise_eq_of_mem (Set.Iic a) f g a_1
+
+  intro x a_1
+  have : derivWithin ((Set.Iic a).piecewise f g) (Set.Ioi a) x = deriv ((Set.Iic a).piecewise f g) x := by
+    apply derivWithin_of_mem_nhds
+    exact Ioi_mem_nhds a_1
+  rw [<- this]
+  rw [derivWithin_congr (f := g)]
+  rw [Set.piecewise_eq_of_not_mem]
+  have : derivWithin g (Set.Ioi a) x = deriv g x := by
+    apply derivWithin_of_mem_nhds
+    exact Ioi_mem_nhds a_1
+  exact this
+  exact Set.not_mem_Iic.mpr a_1
+  rw [<- Set.compl_Iic]
+  exact Set.piecewise_eqOn_compl (Set.Iic a) f g
+  have (x : ℝ) :  x ∈ Set.Ioi a → x ∉ Set.Iic a := by
+    simp
+  apply this at a_1
+  exact Set.piecewise_eq_of_not_mem (Set.Iic a) f g a_1
+  done
+
 end PathIntegral
 
 structure Region (a b : ℝ) (f g : ℝ → ℝ) where
@@ -342,6 +399,10 @@ theorem deriv_vec (k : ℝ → ℝ×ℝ) (x : ℝ) : deriv k x = (deriv (fun x �
   sorry -- unforch
   done
 
+theorem mul_eq_mul_left_iff_inl {a b c : ℝ} (hbc : b = c) : a * b = a * c ↔ b = c := by
+  rw [mul_eq_mul_left_iff, or_iff_left_of_imp]
+  simp only [hbc, implies_true]
+
 theorem green_split_alpha (s_0 s_1 s_2 s_3 s_4: ℝ) (hi : pathIntegral_proj_fst_Integrable s_0 s_4 L k) (hle01 : s_0 ≤ s_1) (hle12 : s_1 ≤ s_2) (hle23 : s_2 ≤ s_3) (hle34 : s_3 ≤ s_4) (hs01 : pathIntegral_proj_fst s_0 s_1 L k = ∫ x in a..b, L (x,g x)) (hs12 : pathIntegral_proj_fst s_1 s_2 L k = 0) (hs23 : pathIntegral_proj_fst s_2 s_3 L k = ∫ x in b..a, L (x,f x)) (hs30 : pathIntegral_proj_fst s_3 s_4 L k = 0) : pathIntegral_proj_fst s_0 s_4 L k = (∫ x in a..b, L (x,g x)) - ∫ x in a..b, L (x,f x) := by
   have hil : pathIntegral_proj_fst_Integrable s_0 s_2 L k := by
     apply pathIntegral_proj_fst_Integrable_on_union_left_reverse s_2 at hi
@@ -399,74 +460,53 @@ theorem green_split {R : Region.SimpleRegion a b f g } {hL : Continuous L} (a_eq
       simp [rble]
       unfold Region.simple_boundary_function
       simp_rw [Set.apply_piecewise _ _ _ (fun r ↦ L)]
-      have x_gt (x : ℝ) (h : x ∈ Set.Ioc (R.b + 1) (R.b + 1 + R.b - R.a)) : (R.b + 1) < x := by
-        simp_all only [Set.mem_Ioc]
-      have t2 (x : ℝ) : (R.b + 1) < x → x ∉ Set.Iic (R.b) := by
-        intro a_1
-        simp
-        apply lt_of_add_lt_of_nonneg_left (b := 1)
-        exact a_1
-        exact zero_le_one
       conv => congr; intro x x_1 x_2; rw [Set.piecewise_eq_of_mem]; rfl; exact x_2; rfl
-      simp_rw [mul_eq_mul_left_iff]
+      -- rw [mul_eq_mul_left_iff_inl (a := L _)]
+      -- conv => congr; intro x x_1 x_2; rw [mul_eq_mul_left_iff_inl]; rfl;
+      -- simp_rw [mul_eq_mul_left_iff]
       -- so then, the last* piece of the puzzle - getting 'for almost all' into 'almost everywhere equal' while keeping the condition on x
       -- * the other being however one could deal with deriv_vec
+      -- rw [Filter.eventually_imp_distrib_left]
+      -- apply Filter.eventually_or_distrib_right
       simp_rw [<- and_imp, <- Set.mem_Ioc]
       apply MeasureTheory.ae_imp_of_ae_restrict
+      -- have (q : ℝ→Prop) : (∀ᶠ (x : ℝ) in MeasureTheory.ae (MeasureTheory.volume.restrict (Set.Ioc R.a R.b)), q x) → (∀ᵐ (x : ℝ) ∂MeasureTheory.volume.restrict (Set.Ioc R.a R.b), q x) := by
+      --   simp only [measurableSet_Ioc, MeasureTheory.ae_restrict_eq, imp_self]
+      -- apply this
       rw [Filter.Eventually]
       have (x : ℝ) (f g : ℝ → ℝ) : f =ᵐ[MeasureTheory.volume.restrict (Set.Ioc R.a R.b)] g → {x | f x = g x} ∈ MeasureTheory.ae (MeasureTheory.volume.restrict (Set.Ioc R.a R.b)) := by
         intro a_1
         simp_all only [Set.mem_Ioc, implies_true, Set.mem_Iic, not_le, measurableSet_Ioc,
           MeasureTheory.ae_restrict_eq]
         exact a_1
-      -- have (x : ℝ) (q q2 : ℝ → Prop) : {x | q x} → {x | q x ∨ q2 x} := by
-      --   intro a_1
-      --   simp_all only [Set.mem_Ioc, implies_true, Set.mem_Iic, not_le, measurableSet_Ioc,
-      --     MeasureTheory.ae_restrict_eq, forall_const, Set.coe_setOf]
-      --   obtain ⟨val, property⟩ := a_1
-      --   simp_all only [Set.mem_setOf_eq]
-      --   apply Subtype.mk
-      --   · apply Or.inl
-      --     exact property -- yek what -- aesop ofc
-
-      -- conv => congr; congr; rfl; congr; intro x; tactic => apply Or.inl; apply Or.intro_left _ (L (x, R.f_b x) = 0);
-      have ad : ({x |
-    (deriv
-            ((Set.Iic R.b).piecewise (fun r ↦ (r, R.f_b r))
-              ((Set.Iic (R.b + 1)).piecewise (fun r ↦ (R.b, R.f_b R.b + (r - R.b) * (R.f_t R.b - R.f_b R.b)))
-                ((Set.Iic (R.b + 1 + R.b - R.a)).piecewise (fun r ↦ (R.b + 1 + R.b - r, R.f_t (R.b + 1 + R.b - r)))
-                  fun r ↦ (R.a, R.f_t R.a - (r - (R.b + 1 + R.b - R.a)) * (R.f_t R.a - R.f_b R.a)))))
-            x).1 =
-        (deriv (fun r ↦ (r, R.f_b r)) x).1} ∈
-  MeasureTheory.ae (MeasureTheory.volume.restrict (Set.Ioc R.a R.b))) → ({x |
-    (deriv
-            ((Set.Iic R.b).piecewise (fun r ↦ (r, R.f_b r))
-              ((Set.Iic (R.b + 1)).piecewise (fun r ↦ (R.b, R.f_b R.b + (r - R.b) * (R.f_t R.b - R.f_b R.b)))
-                ((Set.Iic (R.b + 1 + R.b - R.a)).piecewise (fun r ↦ (R.b + 1 + R.b - r, R.f_t (R.b + 1 + R.b - r)))
-                  fun r ↦ (R.a, R.f_t R.a - (r - (R.b + 1 + R.b - R.a)) * (R.f_t R.a - R.f_b R.a)))))
-            x).1 =
-        (deriv (fun r ↦ (r, R.f_b r)) x).1 ∨
-      L (x, R.f_b x) = 0} ∈
-  MeasureTheory.ae (MeasureTheory.volume.restrict (Set.Ioc R.a R.b))) := by
-        sorry
-      apply ad
       apply this
-      simp_all only [Set.mem_Ioc, implies_true, Set.mem_Iic, not_le, measurableSet_Ioc, MeasureTheory.ae_restrict_eq,
-        forall_const]
-      exact a --aesop again, idrek what or why, apparently this shows 'R'
+      aesop
+      apply Filter.EventuallyEq.mul
+      rfl
+
       have (f g : ℝ → ℝ×ℝ) : (f =ᵐ[MeasureTheory.volume.restrict (Set.Ioc R.a R.b)] g) → (fun x ↦ (f x).1) =ᵐ[MeasureTheory.volume.restrict (Set.Ioc R.a R.b)] fun x ↦ (g x).1 := by
         sorry
       apply this
-      -- apply deriv_piecewise_Ioo_of_lt -- this was before i changed the interval ends around
+      apply Filter.EventuallyEq.trans (g :=
+    (Set.Iic R.b).piecewise (deriv (fun r ↦ (r, R.f_b r)))
+      (deriv ((Set.Iic (R.b + 1)).piecewise (fun r ↦ (R.b, R.f_b R.b + (r - R.b) * (R.f_t R.b - R.f_b R.b)))
+        ((Set.Iic (R.b + 1 + R.b - R.a)).piecewise (fun r ↦ (R.b + 1 + R.b - r, R.f_t (R.b + 1 + R.b - r))) fun r ↦ (R.a, R.f_t R.a - (r - (R.b + 1 + R.b - R.a)) * (R.f_t R.a - R.f_b R.a))))))
+      apply deriv_piecewise_Iic_of_lt
+      rw [Filter.EventuallyEq]
+      -- ok that's nice but now i need Iic back in context, not hidden in the filter, and it won't go back ...
+      have (q : ℝ → Prop) : (∀ᵐ (x : ℝ), x ∈ Set.Ioc R.a R.b → q x) → ∀ᵐ (x : ℝ) ∂MeasureTheory.volume.restrict (Set.Ioc R.a R.b), q x := by
+        intro a_1
+        sorry
+      apply this
+      conv => congr; intro x a_1; rw [Set.piecewise_eq_of_mem]; rfl; exact Set.mem_of_mem_inter_right a_1; rfl
+      simp only [Set.mem_Ioc, implies_true, Filter.eventually_true]
+
       -- you get the idea tho
       -- should be basically the exact same for the other 3 segments assuming the other sorries can be filled in
+      -- looking at it, currently would need to convert back foralmostall to get the x bounds back into context of the piecewise, then back again, for each layer of piecewise rip
       -- as it is, I have run out of time despite spending far longer than i really should have, and haven't even optimised anything
       -- (I looked into trying some meta programming but i couldn't really figure it out, and like what's wrong with the 4 sledgehammers I'm using already)
-      sorry
 
-
-      -- conv => congr; intro x x_1; rw [congr_arg Prod.fst (a₂ := (deriv (fun r ↦ (r, R.f_b r)) x))]; rfl; tactic => sorry
-      -- simp
     · intro x
       rw [deriv_vec]
       simp only [deriv_const']
@@ -509,15 +549,10 @@ theorem green_split {R : Region.SimpleRegion a b f g } {hL : Continuous L} (a_eq
       rw [<- intervalIntegral.integral_symm]
       rw [Set.uIoc, min_def, max_def]
       have rble : R.b + 1 ≤ R.b + 1 + R.b - R.a := by
-        rw [add_sub_assoc]
-        simp
-        apply le_of_lt
-        exact R.a_lt_b
+        simp [le_of_lt, add_sub_assoc, R.a_lt_b]
       simp [rble]
       unfold Region.simple_boundary_function
       simp_rw [Set.apply_piecewise _ _ _ (fun r ↦ L)]
-      have x_gt (x : ℝ) (h : x ∈ Set.Ioc (R.b + 1) (R.b + 1 + R.b - R.a)) : (R.b + 1) < x := by
-        simp_all only [Set.mem_Ioc]
       have t2 (x : ℝ) : (R.b + 1) < x → x ∉ Set.Iic (R.b) := by
         intro a_1
         simp
